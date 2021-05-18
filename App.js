@@ -5,19 +5,17 @@ import {
   Text,
   View,
   TouchableOpacity,
-  DeviceEventEmitter,
   Alert,
   Platform,
   Image,
   Dimensions,
   Button,
   ActivityIndicator,
-  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Switch } from "react-native-switch";
-import { FontAwesome } from "@expo/vector-icons";
-import * as Location from "expo-location";
+import { MaterialIcons } from "@expo/vector-icons";
+
 
 //Just to disable Animation "useNativeDriver" Warning
 import { LogBox } from "react-native";
@@ -25,15 +23,26 @@ import { LogBox } from "react-native";
 //App Header
 import Header from "./components/Header";
 //Map Wrapper
-import Map from "./components/Map";
-//Permission Denied Error
-import LocationPermissionDeniedError from "./components/LocationPermissionDeniedError";
-//Gps off error
-import GPSOffError from './components/GpsOffError';
+import Map from "./screens/Map";
+//api data fetch failure error
+import FetchError from "./components/FetchError";
+//fetching loader
+import FetchLoader from "./components/FetchLoader";
+
+//API DATA ADAPTERS
+import getDieselStationsData from './adapters/diesel-stations.adapter';
+import getGasStationsData from './adapters/gas-stations.adapter';
+
+//Second View
+import StationsListView from "./screens/StationsListView";
 
 class App extends Component {
   constructor(props) {
     super(props);
+
+    //methods (this) bindings
+    this.switchToView = this.switchToView.bind(this);
+    this.fetchData = this.fetchData.bind(this);
 
     //APP STATE
     this.state = {
@@ -46,23 +55,18 @@ class App extends Component {
       //currentViewingStations = 1 for diesel and 2 for gas
       currentViewingStations: 1,
 
-      //location oermission stat
-      locationPermissionGranted: true,
+      //loaded stations data (null|object)
+      fetchedData: {dieselStations:null,gasStations:null},
 
-      //user location coords
-      userLocation: {},
+      //data that couldnt fetch (null = none, 1 = diesel, 2 = gas)
+      firstFetchFailed: false,
 
-      //loaded stations data
-      fetchedData: [],
+      //request completion
+      requestCompleted:false,
 
-      //loading state
-      loading: false,
+      //loading state `true` when loading ,`failed` when failed to fetch,`loaded` when fetched data
+      loading: true,
 
-      //data fetch failure
-      loadingFailed: false,
-      gpsOn:true,
-
-      //gps state
       switchOn: true,
       sortByPrice: false,
     };
@@ -80,53 +84,52 @@ class App extends Component {
     //Disable the Animation warning to set native driver
     //Switch dependency didn't set it
     LogBox.ignoreLogs(["Animated: `useNativeDriver`"]);
-
-    //invoke permission requester
-    this.requestPermission();
-  }
-
-  //Location Permission request function
-  async requestPermission() {
-    //If location permission has been granted, go on to turning gps, else request permission
-    let { granted } = await Location.requestForegroundPermissionsAsync();
-    if (!granted) {
-      this.setState({ locationPermissionGranted: false });
-      return;
-    }
-    this.setState({locationPermissionGranted:true})
-    //if granted, fetch data
-    this.state.fetchedData.length == 0 && this.fetchData()
+    this.fetchData();
   }
 
   //Fetch Data
-  fetchData() {
-    this.setState({ loading: true });
+  async fetchData() {
 
-    const fetched = async () => {
-      let gpsOn = await Location.hasServicesEnabledAsync();
-      if(gpsOn) return this.setState({fetchedData:[{a:1}], loading:false})
+    //temp state object for underlying operations (to avoid frequest state updates betwenn data fetching)
+    let stateCache = {
+      loading:true,
+      firstFetchFailed:false,
+      fetchedData:{
+        dieselStations:null,
+        gasStations:null
+      }
+    };
 
-      Location.enableNetworkProviderAsync().then(() => {
-        this.setState({fetchedData:[{a:1}], loading:false})
-      }).catch(error => {
-        this.setState({loading:false, gpsOn:false});
-        this.registerGpsListener([{a:1}])
-      })
-    }
+    //fetch diesel stations data
+    await getDieselStationsData().then(data => {
+      stateCache['fetchedData']['dieselStations'] = data;
+    }).catch(e => {
+      console.log('failed diesel');
+      stateCache['firstFetchFailed'] = true;        
+    });
 
-    //mock function for fetching data with delay
-    setTimeout(
-      fetched,
-      2000
-    );
+    //fetch gas stations data
+    await getGasStationsData().then(data => {
+      stateCache['fetchedData']['gasStations'] = data;
+      stateCache['loading'] = 'loaded';
+    }).catch(e => {
+      console.log('failed gas');
+      stateCache['loading'] = stateCache['firstFetchFailed'] ? 'failed' : 'loaded';
+    });
+
+    this.setState(stateCache);
   }
 
-  //GPS State Listener
-  registerGpsListener(data){
-    let interval = setInterval(async () => {
-      let gpsOn = await Location.hasServicesEnabledAsync();
-      if(gpsOn) this.setState({fetchedData:data, gpsOn:true}) ?? clearInterval(interval);
-    }, 1000)
+  //toggle display btw map and stations-list view
+  switchToView(view = 2) {
+    this.setState({ currentScreenView: view });
+  }
+
+  //Util to check if data was fetched
+  dataWasFecthed(){
+    var store = this.state.fetchedData;
+    return store && 
+    (('dieselStations' in store && store['dieselStations']) || ('gasStations' in store && store['gasStations']))
   }
 
   render() {
@@ -134,120 +137,100 @@ class App extends Component {
       <Fragment>
         <SafeAreaView style={styles.container}>
           <View style={styles.appWrapper}>
+            
+
             {/* Header */}
             <Header
+              currentScreenView={this.state.currentScreenView}
               currentViewingStations={this.state.currentViewingStations}
+              switchToView={this.switchToView}
             />
 
-            {/* MAP VIEW */}
-            {this.state.fetchedData.length > 0 ? (
-              <Map fetchedData={this.state.fetchedData} />
-            ) : null}
+            {this.state.loading == true ? (
+              //show loader when fetching data
+              <FetchLoader />
+            ) : this.state.loading == "failed" ? (
+              //show failed when loading == 'failed'
+              <FetchError />
+            ) : this.state.loading == "loaded" ? (
+              /* show map when loading == 'loaded' */
+              <View style={styles.screensWrapper}>
+                <View
+                  style={{
+                    flex: 1,
+                    display:
+                      this.state.currentScreenView == 1 ? "flex" : "none",
+                  }}
+                >
+                  <Map 
+                  stationsData={
+                    this.state.currentViewingStations == 1 ?
+                    this.state.fetchedData.dieselStations :
+                    this.state.fetchedData.gasStations
+                  }
+                  >
+                    {/*
+                  //-> Floating Hamburger menu wrapper (absolutely positioned).
+                  //-> Don't nest it inside footer view, it wont be clickable.
+                  //-> (last element gets higher z-index)
+                  */}
+                    {this.state.currentScreenView == 1 ? (
+                      <View style={styles.floatingHamburgerWrapper}>
+                        <TouchableOpacity
+                          onPress={(e) => this.switchToView(2)}
+                          style={styles.floatingHamburger}
+                          //disable if theres nothing fetched
+                          disabled={
+                            false
+                          }
+                        >
+                          <MaterialIcons
+                            name="toc"
+                            size={30}
+                            style={{ elevation: 10 }}
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
+                  </Map>
+                </View>
 
-            {/* GPS Turn on denied Error View */}
-            {!this.state.gpsOn ? <GPSOffError/> : null}
-
-            {/* No Permission Error View */}
-            {!this.state.locationPermissionGranted ? (
-              <LocationPermissionDeniedError
-                turnOnLocation={function(){this.requestPermission()}.bind(this)}
-              />
-            ) : null}
-
-            {/* Loading View */}
-            {this.state.loading ? (
-              <View
-                style={{
-                  flex: 7,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <ActivityIndicator size={40} color="green" />
-                <Text>Fetching Data...</Text>
-                <Text>Make sure you're connected to internet</Text>
+                <View
+                  style={{
+                    flex: 1,
+                    display:
+                      this.state.currentScreenView == 2 ? "flex" : "none",
+                  }}
+                >
+                  <StationsListView stationsData = {
+                    this.state.currentViewingStations == 1 ?
+                    this.state.fetchedData.dieselStations :
+                    this.state.fetchedData.gasStations
+                    }
+                   />
+                </View>
               </View>
-            ) : null}
-
-            {/* Loading Failed */}
-            {this.state.loadingFailed ? (
-              <View
-                style={{
-                  flex: 7,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <FontAwesome name="chain-broken" size={40} color="red" />
-                <Text>Loading Failed</Text>
-                <Text>
-                  Make sure you're connected to internet, and try again
-                </Text>
-              </View>
-            ) : null}
+            ) : (
+              <Text>App Error!!!</Text>
+            )}
 
             {/* FOOTER */}
-            {this.state.fetchedData.length ? (
-              <View style={styles.footer}>
-                <View style={styles.bottomNav}>
-                  {/* Switch toggle for gas/diesel view in map*/}
-                  <View style={styles.stationMapToggleWrapper}>
-                    <Switch
-                      value={
-                        this.state.currentViewingStations == 1 ? true : false
-                      }
-                      onValueChange={(v) =>
-                        this.setState({ currentViewingStations: v })
-                      }
-                      activeText="Gas"
-                      inActiveText="Diesel"
-                      backgroundActive="#ccc"
-                      backgroundInactive="#ccc"
-                      circleActiveColor="#fff"
-                      circleInActiveColor="#fff"
-                      circleBorderWidth={1}
-                      barHeight={25}
-                      switchWidthMultiplier={3}
-                      changeValueImmediately={true}
-                      innerCircleStyle={{
-                        ...this.toggleBtn.mapViewToggleInnerCircle,
-
-                        //Adjust properties depending on current viewing station (gas/diesel)
-                        width:
-                          this.state.currentViewingStations == 1
-                            ? "55%"
-                            : "50%",
-                        borderColor:
-                          this.state.currentViewingStations == 1
-                            ? "green"
-                            : "red",
-                      }}
-                      renderInsideCircle={() => (
-                        <Text
-                          style={{
-                            color:
-                              this.state.currentViewingStations == 1
-                                ? "green"
-                                : "red",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {this.state.currentViewingStations == 1
-                            ? "Diesel"
-                            : "Gas"}
-                        </Text>
-                      )}
-                    />
-                  </View>
-
-                  <View style={styles.optionsGroup}>
-                    {/* Switch toggle for distance/price sorting in list view*/}
-                    <View style={styles.listViewSortingToggleWrapper}>
+            <View style={styles.footer}>
+              <View style={styles.bottomNav}>
+                {/* Switch toggle for gas/diesel view in map*/}
+                <View style={styles.stationMapToggleWrapper}>
+                  {
+                    //show only when theres stations to display
+                    this.dataWasFecthed() ? (
                       <Switch
-                        value={this.state.sortByPrice}
-                        onValueChange={(v) => this.setState({ sortByPrice: v })}
-                        activeText="Distance"
-                        inActiveText="Price"
+                        value={
+                          this.state.currentViewingStations == 1 ? true : false
+                        }
+                        onValueChange={(v) =>
+                          this.setState({ currentViewingStations: v })
+                        }
+                        activeText="Gas"
+                        inActiveText="Diesel"
                         backgroundActive="#ccc"
                         backgroundInactive="#ccc"
                         circleActiveColor="#fff"
@@ -259,54 +242,97 @@ class App extends Component {
                         innerCircleStyle={{
                           ...this.toggleBtn.mapViewToggleInnerCircle,
 
-                          //Adjust properties depending on current viewing station (gas/diesel)
-                          width: this.state.sortByPrice ? "55%" : "68%",
-                          borderColor: this.state.sortByPrice ? "red" : "blue",
+                          //Adjust properties  depending on current viewing station (gas/diesel)
+                          width:
+                            this.state.currentViewingStations == 1
+                              ? "55%"
+                              : "50%",
+                          borderColor:
+                            this.state.currentViewingStations == 1
+                              ? "#0a0"
+                              : "red",
                         }}
                         renderInsideCircle={() => (
                           <Text
                             style={{
-                              color: this.state.sortByPrice ? "red" : "blue",
+                              color:
+                                this.state.currentViewingStations == 1
+                                  ? "#0a0"
+                                  : "red",
                               fontWeight: "bold",
                             }}
                           >
-                            {this.state.sortByPrice ? "Price" : "Distance"}
+                            {this.state.currentViewingStations == 1
+                              ? "Diesel"
+                              : "Gas"}
                           </Text>
                         )}
                       />
-                    </View>
+                    ) : null
+                  }
+                </View>
 
-                    {/* Result Filter button*/}
-                    <View style={styles.filterWrapper}>
-                      <TouchableOpacity>
-                        <FontAwesome name="filter" size={28} />
-                      </TouchableOpacity>
-                    </View>
+                <View style={styles.optionsGroup}>
+                  {/* Switch toggle for distance/price sorting in list view*/}
+                  <View style={styles.listViewSortingToggleWrapper}>
+                    {
+                      //show only when theres stations to display and in second view
+                      this.state.currentScreenView == 2 &&
+                      this.dataWasFecthed() ? (
+                        <Switch
+                          value={this.state.sortByPrice}
+                          onValueChange={(v) =>
+                            this.setState({ sortByPrice: v })
+                          }
+                          activeText="Distance"
+                          inActiveText="Price"
+                          backgroundActive="#ccc"
+                          backgroundInactive="#ccc"
+                          circleActiveColor="#fff"
+                          circleInActiveColor="#fff"
+                          circleBorderWidth={1}
+                          barHeight={25}
+                          switchWidthMultiplier={3}
+                          changeValueImmediately={true}
+                          innerCircleStyle={{
+                            ...this.toggleBtn.mapViewToggleInnerCircle,
 
-                    {/* Help button*/}
-                    <View style={styles.helpWrapper}>
-                      <TouchableOpacity>
-                        <FontAwesome name="question-circle" size={28} />
-                      </TouchableOpacity>
-                    </View>
+                            //Adjust properties depending on current viewing station (gas/diesel)
+                            width: this.state.sortByPrice ? "55%" : "68%",
+                            borderColor: this.state.sortByPrice
+                              ? "red"
+                              : "blue",
+                          }}
+                          renderInsideCircle={() => (
+                            <Text
+                              style={{
+                                color: this.state.sortByPrice ? "red" : "blue",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              {this.state.sortByPrice ? "Price" : "Distance"}
+                            </Text>
+                          )}
+                        />
+                      ) : null
+                    }
+                  </View>
+
+                  {/* Result Filter button*/}
+                  <View style={styles.filterWrapper}>
+                    <TouchableOpacity>
+                      <MaterialIcons name="filter-alt" size={33} />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Help button*/}
+                  <View style={styles.helpWrapper}>
+                    <TouchableOpacity>
+                      <MaterialIcons name="help-center" size={33} />
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
-            ) : null}
-
-            {/*
-              //-> Floating Hamburger menu wrapper (absolutely positioned).
-              //-> Don't nest it inside footer view, it wont be clickable.
-              //-> (last element gets higher z-index)
-            */}
-            <View style={styles.floatingHamburgerWrapper}>
-              <TouchableOpacity
-                onPress={(e) => alert("Hey")}
-                style={styles.floatingHamburger}
-                disabled={this.state.fetchedData.length == 0}
-              >
-                <FontAwesome name="bars" size={30} style={{ elevation: 10 }} />
-              </TouchableOpacity>
             </View>
           </View>
         </SafeAreaView>
@@ -322,17 +348,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "stretch",
     justifyContent: "center",
+    width:'100%'
   },
   appWrapper: {
     flexDirection: "column",
     flex: 1,
-    height: "100%",
+    minHeight: "100%",
+    width: "100%",
+  },
+  screensWrapper: {
+    minHeight: "76%",
+    width: "100%",
   },
   footer: {
-    flex: 0.5,
     flexDirection: "column",
     backgroundColor: "white",
     borderWidth: 1,
+    minHeight:'12%',
     width: "100%",
     borderWidth: 1,
     zIndex: 0,
@@ -342,15 +374,18 @@ const styles = StyleSheet.create({
   floatingHamburgerWrapper: {
     zIndex: 9999,
     position: "absolute",
-    bottom: "10%",
-    right: "5%",
-    backgroundColor: "#fff",
+    bottom: "5%",
+    right: "8%",
     elevation: 10,
   },
   floatingHamburger: {
     position: "relative",
     padding: 10,
+    // borderRadius:50,
+    borderWidth: 1,
+    borderColor: "#999",
     shadowOffset: { x: 30, y: 30 },
+    shadowColor: "#999",
     backgroundColor: "white",
   },
   bottomNav: {
@@ -383,4 +418,7 @@ const styles = StyleSheet.create({
   },
 });
 
+//flex for horiz axis
+//justify = center horiz/vert
+//alignitems = cross
 export default App;

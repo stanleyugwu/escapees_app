@@ -20,7 +20,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.escapees.fuelapp",
       "infoPlist": {
-        
+        "NSLocationWhenInUseUsageDescription":"This App uses your location to show your nearby gas/deisel stations",
       }
     },
     "android": {
