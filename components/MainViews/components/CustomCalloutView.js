@@ -2,6 +2,8 @@ import React from 'react';
 import {View, TouchableOpacity, Alert} from 'react-native';
 import styled from 'styled-components/native';
 
+import {Grid, Row, Col, Icon} from 'native-base';
+
 //This component is polymorphic, its used by Map and StationsListView Components
 const CustomCalloutView = (props) => {
 
@@ -46,15 +48,25 @@ const CustomCalloutView = (props) => {
 
     return (
         <CalloutWrapper>
-            <Callout
-            edgeCurve={viewType == 1 ? 10 : 0}
-            borderWidth={viewType == 1 ? 1 : 0}
-            justifyContent={viewType == 1 ? 'space-between' : 'space-around'}
-            >                
+            <Callout>                
                 <Col1>
                     <StationName>
-                        <Logo><Text>Logo</Text></Logo>
-                        <Name><Text fontStyle={"italic"} fontWeight="bold" fontSize={16} color="#555">{s.name + ", " + s.state}</Text></Name>
+                        <Grid>
+                            <Col size={1}>
+                                <Icon name="bus"/>
+                            </Col>
+                            <Col size={6} style={{alignItems:'center',justifyContent:'center'}}>
+                                <Text
+                                    fontStyle={"italic"} 
+                                    fontWeight="bold" 
+                                    fontSize={16} 
+                                    color="#555"
+                                    style={{textAlignVertical:'center'}}
+                                >
+                                    {s.name + ", " + s.state}
+                                </Text>
+                            </Col>
+                        </Grid>
                     </StationName>
 
                     <MoreInfo>
@@ -161,12 +173,10 @@ const Callout = styled.View`
     padding:6px;
     flex-direction:row;
     align-items:center;
+    border-width:1px;
     border-color:#999;
-    ${props => ({
-        borderWidth:props.borderWidth,
-        borderRadius:props.edgeCurve,
-        justifyContent:props.justifyContent || 'space-between'
-    })}
+    justify-content:space-between;
+    border-radius:10px;
 `;
 
 const Arrow = styled.View`
@@ -207,12 +217,7 @@ const StationName = styled.View`
     border-bottom-width:1px;
     border-bottom-color:#bbb;
 `;
-const Logo = styled.View`
-    border:1px solid black;
-`;
-const Name = styled.View`
 
-`;
 // ====== StationName
 
 

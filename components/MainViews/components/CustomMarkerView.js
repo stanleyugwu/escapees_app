@@ -1,5 +1,6 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, Platform,} from 'react-native';
+import {TouchableOpacity, Platform,} from 'react-native';
+import {Icon} from 'native-base';
 import styled from 'styled-components/native';
 
 const CustomMarkerView = ({memberPrice}) => {
@@ -15,7 +16,7 @@ const CustomMarkerView = ({memberPrice}) => {
                     <Price>${memberPriceFormatted}</Price>
                 </PriceWrapper>
                 <LogoWrapper>
-                    <Text>Logo</Text>
+                    <Icon name="bus" style={{fontSize:23}}/>
                 </LogoWrapper>
             </Marker>
             <Arrow/>
@@ -54,7 +55,9 @@ const Price = styled.Text`
 
 const LogoWrapper = styled.View`
     position:relative;
-    padding:5px 2px;
+    padding:2px 5px;
+    align-items:center;
+    justify-content:center;
 `;
 
 const Arrow = styled.View`

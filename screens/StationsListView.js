@@ -1,7 +1,10 @@
 import React from 'react';
-import {View,Text, FlatList} from 'react-native';
+import {View, FlatList} from 'react-native';
 import StationView from '../components/CustomCalloutView';
 import styled from 'styled-components';
+
+import {Container, Root, Button, Text, Switch} from 'native-base';
+
 
 const StationsListView = (props) => {
 
@@ -30,11 +33,39 @@ const StationsListView = (props) => {
                 renderItem={renderStation}
                 keyExtractor={s => s.locationId.toString()}
                 ItemSeparatorComponent={() => <Seperator/>}
-                style={{width:'100%',textAlign:'center',paddingTop:10,padding:5}}
+                style={{width:'100%',textAlign:'center',paddingTop:10,padding:5,backgroundColor:'yellow'}}
             />
         </Wrapper>
     )
 }
+
+// class StationsListView extends React.Component{
+//     constructor(props){
+//         super(props);
+//         this.textRef = null;
+//     }
+
+//     async componentDidMount(){
+//         await Font.loadAsync({
+//             Roboto:require('native-base/Fonts/Roboto.ttf'),
+//             Roboto_medium:require('native-base/Fonts/Roboto_medium.ttf'),
+//             ...Ionicons.font,
+//         })
+//     }
+
+//     render(){
+//         return(
+//             <Root> 
+//                 <Container>
+//                     <Text ref={c => this.textRef = c}>Hello</Text>
+//                     <Button dark>
+//                         <Text>Clickie</Text>
+//                     </Button>
+//                 </Container>
+//             </Root>
+//         )
+//     }
+// } 
 
 const Wrapper = styled.View`
     background:#3597e2;
