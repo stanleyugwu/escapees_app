@@ -3,12 +3,14 @@
     "name": "Escapees_App",
     "slug": "Escapees_App",
     "version": "1.0.0",
+    "entryPoint": "./index.js",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
+    "description": "Fuel Program App for EscappesRVClub",
     "splash": {
+      "backgroundColor": "#fff",
       "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -20,19 +22,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.escapees.fuelapp",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription":"This App uses your location to show your nearby gas/deisel stations",
-      }
-    },
-    "android": {
-      "package": "com.escapees.fuelapp",
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyCXrARUhp_qPRcXVk60EqTk8Yh4JmnrWKM"
-        }
-      },
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "NSLocationWhenInUseUsageDescription":"This App uses your location to show you nearby gas/deisel stations",
       }
     },
     "web": {

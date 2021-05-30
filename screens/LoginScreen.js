@@ -10,6 +10,9 @@ import logo from '../assets/images/logo.png';
 //RN imports
 import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
+//token request endpoint
+const TOKEN_ENDPOINT = 'https://auth.mdshosted.com/auth/realms/mds/protocol/openid-connect/token';
+
 const LoginScreen = (props) => {
 
     //prevent going back to splash screen

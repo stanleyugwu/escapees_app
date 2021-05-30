@@ -1,18 +1,20 @@
 import React from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, Spinner } from "native-base";
+import {StyleSheet} from 'react-native';
 
 const FetchLoader = () => (
-    <View
-    style={{
-      flex: 7,
-      justifyContent: "center",
-      alignItems: "center",
-    }}
-  >
-    <ActivityIndicator size={40} color="#0a0" />
-    <Text>Loading...</Text>
-    <Text>Make sure you're connected to internet</Text>
-  </View>
+  <View style={{...styles.Center,height:'100%',}}>
+    <Spinner size={50} color="#090"/>
+    <Text style={{fontSize:17,fontWeight:'bold',color:'#555'}}>Loading Stations Data...</Text>
+</View>
 );
+
+const styles = StyleSheet.create({
+  Center:{
+    alignItems:'center',
+    justifyContent:'center'
+  }
+})
+
 
 export default FetchLoader;

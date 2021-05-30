@@ -12,11 +12,10 @@ import {
 import {Grid, Col, Row} from 'react-native-easy-grid';
 import { Dimensions, ImageBackground, StyleSheet } from "react-native";
 
-//app logo
-import logo from "../assets/images/logo.png";
-
-//background image
-import bg from "../assets/images/splash-bg4.jpg";
+import * as SecureStore from 'expo-secure-store';//credentials store package
+import logo from "../assets/images/logo.png";//app logo
+import bg from "../assets/images/splash-bg4.jpg";//background image
+import {decrypt} from '../utils/cryptor';//cryptography helper function
 
 const SplashScreen = ({ navigation }) => {
 
@@ -29,11 +28,25 @@ const SplashScreen = ({ navigation }) => {
   //if user credentials exists, redirect to Home, else redirect to Login
   let nextScreen = exists ? 'Home' : 'Login';
 
+  //function to extract creds from store
+  const extractData = async () => {
+    let storeName = 'eskp_pv_data';
+    let dataHash = await SecureStore.getItemAsync(storeName);
+    if(!dataHash || dataHash.length < 2) return false
+    let dataObject = JSON.parse(decrypt(dataHash));
+    return dataObject
+  }
+
+  //function to authenticate user
+  const authenticateUser = () => {
+    let dataObject = extractData();
+    // if(!dataObject) return navigation.navigate('Login')
+  }
+
   //auto navigate to login screen after 2 seconds of mount
   useEffect(()=>{
-      timeout && clearTimeout(timeout);
-      timeout = setTimeout(() => navigation.navigate(nextScreen), 500);
-  },[])
+    authenticateUser();
+  },[]);
 
   return (
     <Root>

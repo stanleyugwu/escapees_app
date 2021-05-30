@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Root, Container, Text, Button, Header, Content, Footer, Left, Body, Right, Icon, Grid, Col, Row, View, Spinner, H3, Title,} from 'native-base';
+import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
 
-//viewingStations Switch component
+//viewingStations Switch and sort components
 import StationSwitch from '../components/StationSwitch';
-import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 import SortSwitch from '../components/SortSwitch';
+
+import FetchLoader from '../components/FetchLoader';//resource fetch loader
+import FetchError from '../components/FetchError';//fetch error view
 
 //resource adapters
 import getAllStationLocations from '../adapters/all-stations.adapter';
@@ -17,6 +20,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 //MAIN VIEWS WRAPPER
 import MainViewsWrapper from '../components/MainViews/index';
+
 
 
 const HomeScreen = (props) => {
@@ -85,30 +89,14 @@ const HomeScreen = (props) => {
                         {
                             //null == 'loading'
                             dataLoaded == null ? (
-                                <View style={{...styles.Center,height:'100%',}}>
-                                    <Spinner size={50} color="#090"/>
-                                    <Text style={{fontSize:17,fontWeight:'bold',color:'#555'}}>Loading Stations Data...</Text>
-                                </View>
+                                <FetchLoader/>
                             ) : null
                         }{/* RESOURCE LOAD INDICATOR */}
                             
                         {
                             //false == 'load failed'
                             dataLoaded == false ? (
-                                <View style={{...styles.Center,height:'100%',padding:20}}>
-                                    <Icon name="cloud" type="FontAwesome5" style={{fontSize:35,}}/>
-                                    <Text style={{color:'red',fontSize:17,fontWeight:'bold'}}>Error Loading Data..</Text>
-                                    <Text style={{textAlign:'center',fontSize:17}}>Make sure you're connected to the internet and try again.</Text>
-
-                                    <TouchableOpacity 
-                                        transparent bordered 
-                                        style={{...styles.Center,...styles.RetryButton}}
-                                        onPress={fetchData}
-                                    >
-                                        <Icon name="refresh" style={{color:'#090'}}/>
-                                        <Text style={{color:'#090',fontWeight:'bold'}}>Try Again</Text>
-                                    </TouchableOpacity>
-                                </View>
+                                <FetchError/>
                             ) : null
                         }{/* RESOURCE LOAD ERROR */}
                         
@@ -171,14 +159,6 @@ const styles = StyleSheet.create({
     Center:{
         alignItems:'center',
         justifyContent:'center'
-    },
-    RetryButton:{
-        marginTop:20,
-        flexDirection:'row',
-        padding:5,
-        paddingHorizontal:10,
-        borderWidth:1,
-        borderColor:'#090'
     },
     FloatingMenu:{
         backgroundColor:'white',
