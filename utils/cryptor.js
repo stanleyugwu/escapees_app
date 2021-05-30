@@ -1,4 +1,4 @@
-import crypto from 'crypto';//built-in node module for cryptography
+import crypto from 'crypto-js';
 
 const PRIVATE_KEY = `-----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQDQe0yadspLeiPXEwJa9Io+TG+56BBwquyaJGq1ws9rn+Aw1/yA
@@ -16,31 +16,17 @@ HbESVlDepQPY60h8ai1BRMWtOECdI04uA5p7YnAbvVHPZ0K0QMbq34E3WvEs7jZ5
 FNu5IYoRdgD6gtArkE7qGwHoANHaNDgsd5T453+Rbg==
 -----END RSA PRIVATE KEY-----`;
 
-const PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDQe0yadspLeiPXEwJa9Io+TG+5
-6BBwquyaJGq1ws9rn+Aw1/yAW20oWTTf0HGxIn7lSIMJ7dgIgLHL/xC5WrdYPEWq
-dByMizIa1i5bj7AUuHv8smorhsa/zpHB69BvgFE80YGlhS7jgXzHLhJ4BvzsPxKC
-uKjfarbOYHSyW7oijQIDAQAB
------END PUBLIC KEY-----`;
-
-const algorithm = 'aes-256-ctr';
-const iv = crypto.randomBytes(16);
 
 const encrypt = (data) => {
-    const cipher = crypto.createCipheriv(algorithm,PRIVATE_KEY,iv);
-    const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
-
-    return {
-        iv:iv.toString('hex'),
-        content:encrypted.toString('hex')
-    }
+    if(!data) return false
+    return crypto.AES.encrypt(JSON.stringify(data), PRIVATE_KEY).toString();
 }
 
 const decrypt = (hash) => {
-    const decipher = crypto.createDecipheriv(algorithm,PUBLIC_KEY,Buffer.from(hash.iv, 'hex'));
-    const decrypted = Buffer.concat([decipher.update(Buffer.from(hash.content,'hex')), decipher.final()]);
-
-    return decrypted.toString();
+    if(!hash) return false
+    var bytes = crypto.AES.decrypt(hash, PRIVATE_KEY);
+    var originalData = JSON.parse(bytes.toString(crypto.enc.Utf8));
+    return originalData
 }
 
 export {encrypt, decrypt}

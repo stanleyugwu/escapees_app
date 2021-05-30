@@ -32,7 +32,7 @@ const HomeScreen = (props) => {
     const [stationsDisplayView, setStationsDisplayView] = useState(1);
 
     //track data fetch progress (null = 'loading', true = 'loaded', false = 'encountered error')
-    const [dataLoaded, setDataLoaded] = useState(false);//default is loading
+    const [dataLoaded, setDataLoaded] = useState(null);//default is loading
 
     //resource data
     const [stationLocationsData, setStationLocationsData] = useState([]);

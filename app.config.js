@@ -12,7 +12,7 @@ module.exports = ({config}) => {
           },
         },
         adaptiveIcon: {
-          foregroundImage: "./assets/images/adaptive-icon.png",
+          foregroundImage: "./assets/images/logo.png",
           backgroundColor: "#FFFFFF"
         }
       },

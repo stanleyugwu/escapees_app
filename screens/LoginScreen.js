@@ -41,26 +41,28 @@ const LoginScreen = (props) => {
 
     //form submission handler
     const handleSubmit = () => {
+
+        props.navigation.navigate('Home');
         //destructure details
-        const {usernameEmail, password} = loginDetails;
+        // const {usernameEmail, password} = loginDetails;
 
-        //show error if no details was supplied
-        if(usernameEmail.trim() && password){
-            setLoggingIn(true) ?? setErrorText('');
-        }else {
-            setErrorText('You Supplied Empty Fields..');
-            return 
-        }
+        // //show error if no details was supplied
+        // if(usernameEmail.trim() && password){
+        //     setLoggingIn(true) ?? setErrorText('');
+        // }else {
+        //     setErrorText('You Supplied Empty Fields..');
+        //     return 
+        // }
 
-        //if valid inputs were entered
-        if(usernameEmail === user && password === pass){
-           setTimeout(() => props.navigation.navigate('Home'), 2000);
-        }else{
-           setTimeout(() => {
-            setErrorText('Wrong Username or Password');
-            setLoggingIn(false);
-           }, 2000)
-        }
+        // //if valid inputs were entered
+        // if(usernameEmail === user && password === pass){
+        //    setTimeout(() => props.navigation.navigate('Home'), 2000);
+        // }else{
+        //    setTimeout(() => {
+        //     setErrorText('Wrong Username or Password');
+        //     setLoggingIn(false);
+        //    }, 2000)
+        // }
 
     }
 

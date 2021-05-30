@@ -1,4 +1,4 @@
-import allStationLocations from '../api-data-models/all-station-locations.json';
+import allStationLocations from '../dummy-api-data-models/all-station-locations.json';
 
 const getAllStationLocations = () => {
     return new Promise((res,rej) => {

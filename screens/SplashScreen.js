@@ -19,33 +19,29 @@ import {decrypt} from '../utils/cryptor';//cryptography helper function
 
 const SplashScreen = ({ navigation }) => {
 
-  //timeout ref
-  let timeout = null;
-
-  //login creds exists in system
-  let exists = true;
-
-  //if user credentials exists, redirect to Home, else redirect to Login
-  let nextScreen = exists ? 'Home' : 'Login';
 
   //function to extract creds from store
   const extractData = async () => {
     let storeName = 'eskp_pv_data';
     let dataHash = await SecureStore.getItemAsync(storeName);
     if(!dataHash || dataHash.length < 2) return false
-    let dataObject = JSON.parse(decrypt(dataHash));
-    return dataObject
+    let dataObject = decrypt(dataHash);
+    return dataObject instanceof Object ? dataObject : false
   }
 
   //function to authenticate user
-  const authenticateUser = () => {
-    let dataObject = extractData();
-    // if(!dataObject) return navigation.navigate('Login')
+  const authenticateUser = async () => {
+    let dataObject = await extractData();
+    if(dataObject == false) return navigation.navigate('Login');
+
+    if(dataObject && dataObject instanceof Object){
+      return navigation.navigate('Home');
+    }
   }
 
   //auto navigate to login screen after 2 seconds of mount
   useEffect(()=>{
-    authenticateUser();
+    setTimeout(authenticateUser, 1000);
   },[]);
 
   return (
