@@ -15,28 +15,57 @@ import { Dimensions, ImageBackground, StyleSheet } from "react-native";
 import * as SecureStore from 'expo-secure-store';//credentials store package
 import logo from "../assets/images/logo.png";//app logo
 import bg from "../assets/images/splash-bg4.jpg";//background image
-import {decrypt} from '../utils/cryptor';//cryptography helper function
 
 const SplashScreen = ({ navigation }) => {
 
-
-  //function to extract creds from store
-  const extractData = async () => {
-    let storeName = 'eskp_pv_data';
-    let dataHash = await SecureStore.getItemAsync(storeName);
-    if(!dataHash || dataHash.length < 2) return false
-    let dataObject = decrypt(dataHash);
-    return dataObject instanceof Object ? dataObject : false
-  }
-
   //function to authenticate user
   const authenticateUser = async () => {
-    let dataObject = await extractData();
-    if(dataObject == false) return navigation.navigate('Login');
 
-    if(dataObject && dataObject instanceof Object){
-      return navigation.navigate('Home');
-    }
+    //store keys
+    let tokenStore = 'eskp_pv_tokens';
+    let dataStore = 'eskp_pv_data';
+
+    SecureStore.isAvailableAsync()
+    .then(available => {
+      if(available) return true
+      else throw Error('Api not available')
+    })
+    .then(available => {
+      if(available){
+        SecureStore.getItemAsync(tokenStore)
+        .then(data => {
+
+          if(!data) throw Error('no token')
+
+          else if(data && JSON.parse(data) instanceof Object && 'refresh_token' in JSON.parse(data)){
+            //token exists
+            let token = JSON.parse(data).refresh_token;
+
+            //try access stations data
+            SecureStore.getItemAsync(dataStore)
+            .then(data => {
+              if(!data) throw Error('No data')
+              else if(data && JSON.parse(data) instanceof Array){
+                //token and data exists
+                return navigation.navigate('Home',{tokenAndDataExists:true, refresh_token:token});
+              }
+            })
+            .catch(error => {
+              //no data, but theres token (still navigate to Home with indication)
+              navigation.navigate('Home',{tokenAndDataExists:false, refresh_token:token});
+            })
+          }
+        })
+        .catch(e => {
+          navigation.navigate('Login',{storeAvailable:true})
+        });//no token (navigate to login)
+      }
+    })
+    .catch(e => {
+      //secure-store api not available
+      navigation.navigate('Login',{storeAvailable:false})
+    })
+
   }
 
   //auto navigate to login screen after 2 seconds of mount

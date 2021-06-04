@@ -3,15 +3,16 @@ import {Root, Container, Button, Header, Content, Thumbnail, View, Title, H3, Se
 import styled from 'styled-components';
 import {Grid, Row, Col} from 'react-native-easy-grid';
 
-
 //app logo
 import logo from '../assets/images/logo.png';
 
 //RN imports
 import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
-//token request endpoint
-const TOKEN_ENDPOINT = 'https://auth.mdshosted.com/auth/realms/mds/protocol/openid-connect/token';
+//token request adapter
+import getToken from '../adapters/get-token.adapter';
+import * as SecureStore from 'expo-secure-store';//credentials store package
+import {encrypt} from '../utils/cryptor';//cryptography helper function
 
 const LoginScreen = (props) => {
 
@@ -35,34 +36,53 @@ const LoginScreen = (props) => {
         setLoginDetails({...loginDetails,[field]:text});
     }
 
-    //dummy
-    const user = 'stanleyugwu2018@gmail.com',
-    pass = '123456'
+    const storeAvailable = props.route.params;//passed from splash-screen
+    console.log(storeAvailable)
+    const storeKey = 'eskp_pv_tokens';//data store key
 
     //form submission handler
     const handleSubmit = () => {
 
-        props.navigation.navigate('Home');
-        //destructure details
-        // const {usernameEmail, password} = loginDetails;
+        // destructure details
+        const {usernameEmail, password} = loginDetails;
 
-        // //show error if no details was supplied
-        // if(usernameEmail.trim() && password){
-        //     setLoggingIn(true) ?? setErrorText('');
-        // }else {
-        //     setErrorText('You Supplied Empty Fields..');
-        //     return 
-        // }
+        //show error if no details was supplied
+        if(usernameEmail.trim() && password){
+            setLoggingIn(true) ?? setErrorText('');
+        }else {
+            setErrorText('You Supplied Empty Fields..');
+            return 
+        }
 
-        // //if valid inputs were entered
-        // if(usernameEmail === user && password === pass){
-        //    setTimeout(() => props.navigation.navigate('Home'), 2000);
-        // }else{
-        //    setTimeout(() => {
-        //     setErrorText('Wrong Username or Password');
-        //     setLoggingIn(false);
-        //    }, 2000)
-        // }
+        //if valid inputs were entered
+        getToken(usernameEmail,password)
+        .then(res => {
+            if(res.ok) return res.json()
+            else if(res.status == 400) throw Error('Bad Request from app, Please try again')
+            else if(res.status == 401) throw Error('Invalid Username/Email or Password');
+            else throw Error('Request Validation Error')
+        })
+        .then(data => {
+            if(data && "access_token" in data && storeAvailable){
+                SecureStore.setItemAsync(storeKey, JSON.stringify(data))
+                .then(d => props.navigation.navigate('Home',{access_token:data['access_token'] || false,storeAvailable:true}))
+                .catch(e => {
+                    //couldn't store tokens, then pass token to Home instead
+                    props.navigation.navigate('Home', {access_token:data['access_token'] || false,storeAvailable:true})
+                })
+            } else if (data && "access_token" in data && !storeAvailable){
+                //store api unavailable
+                props.navigation.navigate('Home', {access_token:data['access_token'] || false, storeAvailable:false})
+            } else{
+                throw Error('Invalid Response')
+            }
+        })
+        .catch(error => {
+            //handle network error
+            if(error.message.indexOf('Network request failed') > -1) error.message = `You're not connected to internet`
+            setLoggingIn(false);
+            setErrorText(error.message)
+        })
 
     }
 

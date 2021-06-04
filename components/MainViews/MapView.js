@@ -21,10 +21,8 @@ const AppMapView = (props) => {
 
     //initial region (pittsburgh)
     const initialRegion = {
-        // latitude: 40.43,
-        // longitude: -80.01,
-        latitude: 35.734,
-        longitude: -81.3648,
+        latitude: 40.43,
+        longitude: -80.01,
         latitudeDelta: 0.49,
         longitudeDelta: 0.49,
     };

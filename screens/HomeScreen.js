@@ -20,7 +20,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 //MAIN VIEWS WRAPPER
 import MainViewsWrapper from '../components/MainViews/index';
-
+import * as SecureStore from 'expo-secure-store';//credentials store package
 
 
 const HomeScreen = (props) => {
@@ -39,7 +39,7 @@ const HomeScreen = (props) => {
 
     //stations extract based on stations in view
     const stationsInView = stationLocationsData.filter((station) => {
-        return station.locationId == viewingStations
+        return true//station.locationId == viewingStations
     });
 
     //prevent going back to splash screen
@@ -48,19 +48,86 @@ const HomeScreen = (props) => {
     //sorting prameter (1 = Distance, 2 = Price)
     const [sortingParameter,setSortingParameter] = useState(1);
 
+    //secure-store-api availability
+    const {storeAvailable, tokenAndDataExists, refresh_token, access_token} = props.route.params;//passed params
+    const dataStore = 'eskp_pv_data';
+    console.log(props.route.params)
+
+    //online data fetch
+    const fetchData = (token, storeAvailable, token_type = 'refresh') => {
+        // getAllStationLocations(token, token_type)
+        // .then(res => {
+        //     if(res.ok) return res.json()
+        //     else throw Error(false)
+        // })
+        // .then(stationsData => {
+        //     if(storeAvailable){
+        //         SecureStore.setItemAsync(dataStore,stationsData)
+        //         .then()
+        //         .catch()
+        //     }
+        //     setStationLocationsData(stationsData);
+        //     setDataLoaded(true);
+        // })
+        // .catch(error => {
+        //     console.log('online fetch error')
+        //     if(error.message == false) return props.navigation.navigate('Login')
+        //     else{
+        //         dataLoaded != false && setDataLoaded(false);
+
+        //     }
+        // })
+    }
+
     //data loader
-    const fetchData = () => {
-        setDataLoaded(null);
-        getAllStationLocations()/*then(res => res.json())*/.then(data => {
-            setStationLocationsData(data);
-            setDataLoaded(true);
-        }).catch(error => {
-            setDataLoaded(false);
-        })
+    const loadData = async () => {
+        setDataLoaded(null);//show loader
+
+        if(tokenAndDataExists && storeAvailable){
+            SecureStore.getItemAsync(dataStore)
+            .then(data => {
+                if(!data) throw Error('no data')
+                else return JSON.parse(data)
+            })
+            .then(data => {
+                if(data && data instanceof Array){
+                    setStationLocationsData(data);
+                    setDataLoaded(true);
+                }else throw Error('invalid data')
+            })
+            .catch(error => {
+                //couldnt get data from store
+                if(refresh_token){
+                    fetchData(refresh_token, storeAvailable);//get data online
+                }else {
+                    console.log('no data or token but said there was')
+                    props.navigation.navigate('Login')
+                }
+            })
+
+        }
+        else if(!tokenAndDataExists && refresh_token){
+            console.log('tn data yesy refresh token')
+            fetchData(refresh_token, storeAvailable);//get data online with refresh_token
+        }
+        else if(!tokenAndDataExists && !refresh_token && access_token){
+            //access_token exists (user just logged in)
+            console.log('yes access')
+            fetchData(access_token, storeAvailable, 'access');
+        }
+        else if(!tokenAndDataExists && !refresh_token && !access_token){
+            console.log('no data or token')
+            //no stored data or token to fetch it
+            props.navigation.navigate('Login')
+        }
+
     }
 
     //resource loader
-    useEffect(fetchData,[])
+    useEffect(() => {
+        loadData()
+        // SecureStore.getItemAsync('eskp_pv_data').then(console.log)
+    },[])
 
     return (
         <Root>
@@ -96,7 +163,7 @@ const HomeScreen = (props) => {
                         {
                             //false == 'load failed'
                             dataLoaded == false ? (
-                                <FetchError/>
+                                <FetchError retry={loadData}/>
                             ) : null
                         }{/* RESOURCE LOAD ERROR */}
                         
