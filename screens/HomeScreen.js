@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Root, Container, Text, Button, Header, Content, Footer, Left, Body, Right, Icon, Grid, Col, Row, View, Spinner, H3, Title,} from 'native-base';
-import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
@@ -20,8 +20,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 //MAIN VIEWS WRAPPER
 import MainViewsWrapper from '../components/MainViews/index';
-import * as SecureStore from 'expo-secure-store';//credentials store package
 
+//storage helper packages
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {encrypt, decrypt} from '../utils/cryptor';
 
 const HomeScreen = (props) => {
 
@@ -49,84 +51,99 @@ const HomeScreen = (props) => {
     const [sortingParameter,setSortingParameter] = useState(1);
 
     //secure-store-api availability
-    const {storeAvailable, tokenAndDataExists, refresh_token, access_token} = props.route.params;//passed params
-    const dataStore = 'eskp_pv_data';
-    console.log(props.route.params)
+    const {dataAvailable, tokens} = props.route.params;//passed params
+
+    // data store key
+    var storeKey = 'eskp_pv_data';
+
+    //data retriever
+    async function retrieveData() {
+        try {   
+        const data = await AsyncStorage.getItem(storeKey);
+        if (data !== null && data.length > 0) {
+            //decrypt data and parse it twice. parsing once doesn't work
+            let decrypted = JSON.parse(JSON.parse(decrypt(data)));
+            return decrypted
+        }else return false
+    
+        } catch (error) {
+            // There was an error on the native side
+            return false
+        }
+    }
+
+    //data persistor
+    async function storeData(data) {
+        try {
+            await AsyncStorage.setItem(
+                storeKey,
+                encrypt(JSON.stringify(data))
+            );
+            //data stored
+        } catch (error) {
+            // There was an error on the native side
+            Alert.alert(
+                null,
+                "Sorry! we couldn't save stations data on your device."
+            )
+        }
+    }
+    
 
     //online data fetch
-    const fetchData = (token, storeAvailable, token_type = 'refresh') => {
-        // getAllStationLocations(token, token_type)
-        // .then(res => {
-        //     if(res.ok) return res.json()
-        //     else throw Error(false)
-        // })
-        // .then(stationsData => {
-        //     if(storeAvailable){
-        //         SecureStore.setItemAsync(dataStore,stationsData)
-        //         .then()
-        //         .catch()
-        //     }
-        //     setStationLocationsData(stationsData);
-        //     setDataLoaded(true);
-        // })
-        // .catch(error => {
-        //     console.log('online fetch error')
-        //     if(error.message == false) return props.navigation.navigate('Login')
-        //     else{
-        //         dataLoaded != false && setDataLoaded(false);
+    const fetchData = (token) => {
+        getAllStationLocations(token['access_token'])
+        .then(res => {
+            if(res.ok) return res.json()
+            else throw Error(false);//server error
+        })
+        .then(stationsData => {
+            //data fetched
+            //data validity checks
+            if(stationsData && stationsData instanceof Array){
+                setStationLocationsData(stationsData.slice(0,50));
+                setDataLoaded(true);
 
-        //     }
-        // })
+                //persist data
+                storeData({
+                    tokens,
+                    stationsData
+                });
+
+            }else throw Error(false);//server error
+        })
+        .catch(error => {
+            if(error.message == false) return props.navigation.navigate('Login');//server error
+            else dataLoaded != false && setDataLoaded(false);//network error
+        })
     }
 
     //data loader
     const loadData = async () => {
         setDataLoaded(null);//show loader
 
-        if(tokenAndDataExists && storeAvailable){
-            SecureStore.getItemAsync(dataStore)
-            .then(data => {
-                if(!data) throw Error('no data')
-                else return JSON.parse(data)
-            })
-            .then(data => {
-                if(data && data instanceof Array){
-                    setStationLocationsData(data);
-                    setDataLoaded(true);
-                }else throw Error('invalid data')
-            })
-            .catch(error => {
-                //couldnt get data from store
-                if(refresh_token){
-                    fetchData(refresh_token, storeAvailable);//get data online
-                }else {
-                    console.log('no data or token but said there was')
-                    props.navigation.navigate('Login')
-                }
-            })
+        if(dataAvailable){
+            //user logged in before, and data was fetched
+            let data = await retrieveData();
+            //data validity checks
+            if(data && typeof data == 'object' && 'stationsData' in data && 'tokens' in data){
+                setStationLocationsData(data['stationsData'].slice(0,5));
+                setDataLoaded(true);
+                return
+            }else return props.navigation.navigate('Login');//invalid credentials
 
-        }
-        else if(!tokenAndDataExists && refresh_token){
-            console.log('tn data yesy refresh token')
-            fetchData(refresh_token, storeAvailable);//get data online with refresh_token
-        }
-        else if(!tokenAndDataExists && !refresh_token && access_token){
-            //access_token exists (user just logged in)
-            console.log('yes access')
-            fetchData(access_token, storeAvailable, 'access');
-        }
-        else if(!tokenAndDataExists && !refresh_token && !access_token){
-            console.log('no data or token')
+        }else if(!dataAvailable && tokens && 'access_token' in tokens){
+            //no data but token was passed, (get data online)
+            return fetchData(tokens);
+        }else {
             //no stored data or token to fetch it
-            props.navigation.navigate('Login')
+            return props.navigation.navigate('Login')
         }
-
     }
 
     //resource loader
     useEffect(() => {
-        loadData()
-        // SecureStore.getItemAsync('eskp_pv_data').then(console.log)
+        loadData();//isomorphic data loader
     },[])
 
     return (

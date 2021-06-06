@@ -11,8 +11,6 @@ import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
 //token request adapter
 import getToken from '../adapters/get-token.adapter';
-import * as SecureStore from 'expo-secure-store';//credentials store package
-import {encrypt} from '../utils/cryptor';//cryptography helper function
 
 const LoginScreen = (props) => {
 
@@ -36,10 +34,6 @@ const LoginScreen = (props) => {
         setLoginDetails({...loginDetails,[field]:text});
     }
 
-    const storeAvailable = props.route.params;//passed from splash-screen
-    console.log(storeAvailable)
-    const storeKey = 'eskp_pv_tokens';//data store key
-
     //form submission handler
     const handleSubmit = () => {
 
@@ -54,7 +48,7 @@ const LoginScreen = (props) => {
             return 
         }
 
-        //if valid inputs were entered
+        //if valid inputs were entered get token
         getToken(usernameEmail,password)
         .then(res => {
             if(res.ok) return res.json()
@@ -62,18 +56,10 @@ const LoginScreen = (props) => {
             else if(res.status == 401) throw Error('Invalid Username/Email or Password');
             else throw Error('Request Validation Error')
         })
-        .then(data => {
-            if(data && "access_token" in data && storeAvailable){
-                SecureStore.setItemAsync(storeKey, JSON.stringify(data))
-                .then(d => props.navigation.navigate('Home',{access_token:data['access_token'] || false,storeAvailable:true}))
-                .catch(e => {
-                    //couldn't store tokens, then pass token to Home instead
-                    props.navigation.navigate('Home', {access_token:data['access_token'] || false,storeAvailable:true})
-                })
-            } else if (data && "access_token" in data && !storeAvailable){
-                //store api unavailable
-                props.navigation.navigate('Home', {access_token:data['access_token'] || false, storeAvailable:false})
-            } else{
+        .then(tokens => {
+            if(tokens && "access_token" in tokens){
+                return props.navigation.navigate('Home',{tokens})
+            }else{
                 throw Error('Invalid Response')
             }
         })

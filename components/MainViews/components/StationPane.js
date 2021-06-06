@@ -2,11 +2,12 @@ import React from 'react';
 import {View, Col, Grid, Row, Icon} from 'native-base';
 import { StyleSheet } from 'react-native';
 import styled from 'styled-components';
-import GeographicLib from 'geographiclib';
+// import GeographicLib from 'geographiclib';
 
+//util function to calculate distance from latLng
 import distanceFromCoords from '../../../utils/distanceFromCoords';
 
-var geod = GeographicLib.Geodesic.WGS84, r;
+// var geod = GeographicLib.Geodesic.WGS84, r;
 
 
 const StationPane = (props) => {
@@ -21,10 +22,12 @@ const StationPane = (props) => {
         const {latitude:ulat, longitude:ulon} = props.userPosition; //users latLng
         // r = geod.Inverse(40.734, -81.3648, 40.734, -81.3649).s12.toFixed();
         // console.log(r);
-        r = distanceFromCoords(ulat,slat,ulon,slon);
+        var distance = distanceFromCoords(ulat,slat,ulon,slon);
 
         // console.log(distanceFromCoords(53.32055555555556,53.31861111111111,-1.7297222222222221,-1.6997222222222223))
     }
+
+    
 
     //seperate cents change (to be superscripted) from whole retail price
     let regularPrice = s.regularPrice.toString();
@@ -160,7 +163,7 @@ const StationPane = (props) => {
                                     <Text style={{textAlignVertical:'center',paddingLeft:5}} size={13}>
                                         {
                                             props.userPosition == null ? 
-                                            'calculating distance' : r ? r : null
+                                            'calculating distance' : distance ? distance : null
                                         }
                                     </Text>
                                 </Row>

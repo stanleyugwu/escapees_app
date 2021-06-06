@@ -3,12 +3,8 @@ import Constants from 'expo-constants';
 
 const stationsDataEndpoint = Constants.manifest.extra.stations_data_endpoint;
 
-const getAllStationLocations = async (token, token_type) => {
-
-    if(token_type == 'refresh'){
-        //we need to get access_token with refresh_token before data fetch
-        
-    }
+const getAllStationLocations = async (token) => {
+    
     var myHeaders = new Headers();
     myHeaders.append("Authorization", `Bearer ${token}`);
 

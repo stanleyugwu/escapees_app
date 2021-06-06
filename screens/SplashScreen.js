@@ -10,65 +10,52 @@ import {
   Title
 } from "native-base";
 import {Grid, Col, Row} from 'react-native-easy-grid';
-import { Dimensions, ImageBackground, StyleSheet } from "react-native";
+import { Dimensions, ImageBackground, StyleSheet,} from "react-native";
 
-import * as SecureStore from 'expo-secure-store';//credentials store package
+//images
 import logo from "../assets/images/logo.png";//app logo
 import bg from "../assets/images/splash-bg4.jpg";//background image
+
+//storage options
+import {encrypt, decrypt} from '../utils/cryptor';//cryptography helper
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+//store key
+var storeKey = 'eskp_pv_data';
+
+//data retriever
+async function retrieveData() {
+  try {   
+    const data = await AsyncStorage.getItem(storeKey);
+    if (data !== null && data.length > 0) {
+      //decrypt data and parse it twice. parsing once doesn't work
+      let decrypted = JSON.parse(JSON.parse(decrypt(data)));
+      return decrypted
+
+    }else return false
+
+  } catch (error) {
+      // There was an error on the native side
+      return false
+  }
+}
 
 const SplashScreen = ({ navigation }) => {
 
   //function to authenticate user
   const authenticateUser = async () => {
-
-    //store keys
-    let tokenStore = 'eskp_pv_tokens';
-    let dataStore = 'eskp_pv_data';
-
-    SecureStore.isAvailableAsync()
-    .then(available => {
-      if(available) return true
-      else throw Error('Api not available')
-    })
-    .then(available => {
-      if(available){
-        SecureStore.getItemAsync(tokenStore)
-        .then(data => {
-
-          if(!data) throw Error('no token')
-
-          else if(data && JSON.parse(data) instanceof Object && 'refresh_token' in JSON.parse(data)){
-            //token exists
-            let token = JSON.parse(data).refresh_token;
-
-            //try access stations data
-            SecureStore.getItemAsync(dataStore)
-            .then(data => {
-              if(!data) throw Error('No data')
-              else if(data && JSON.parse(data) instanceof Array){
-                //token and data exists
-                return navigation.navigate('Home',{tokenAndDataExists:true, refresh_token:token});
-              }
-            })
-            .catch(error => {
-              //no data, but theres token (still navigate to Home with indication)
-              navigation.navigate('Home',{tokenAndDataExists:false, refresh_token:token});
-            })
-          }
-        })
-        .catch(e => {
-          navigation.navigate('Login',{storeAvailable:true})
-        });//no token (navigate to login)
-      }
-    })
-    .catch(e => {
-      //secure-store api not available
-      navigation.navigate('Login',{storeAvailable:false})
-    })
+    //get persisted data
+    let data = await retrieveData();
+    if(!data){
+      return navigation.navigate('Login')
+    }else if(data && typeof data == 'object' && 'stationsData' in data && 'tokens' in data){
+      return navigation.navigate('Home',{dataAvailable:true})
+    }
 
   }
 
-  //auto navigate to login screen after 2 seconds of mount
+  //auto navigate to login screen after 1 second of mount
   useEffect(()=>{
     setTimeout(authenticateUser, 1000);
   },[]);

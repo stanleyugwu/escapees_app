@@ -1,8 +1,8 @@
 import React from 'react';
 import {View, TouchableOpacity, Alert} from 'react-native';
 import styled from 'styled-components/native';
-
-import {Grid, Row, Col, Icon} from 'native-base';
+import {Grid, Row, Col,} from 'react-native-easy-grid';
+import {Icon} from 'native-base';
 
 //This component is polymorphic, its used by Map and StationsListView Components
 const CustomCalloutView = (props) => {
@@ -118,16 +118,21 @@ const CustomCalloutView = (props) => {
                     </MemberPrice>
                     <MoneySaved>
                         <Text fontWeight="bold" color="#aaa">You Save</Text>
-                        <View style={{flexDirection:'row',maxWidth:'70%'}}>
+                        <View style={{flexDirection:'row'}}>
                             <View>
-                                <Text fontWeight="bold">${savingDollarWhole}</Text>
+                                <Text fontWeight="bold" >${savingDollarWhole}</Text>
                             </View>
-                                
-                                    {
-                                        savingChange ? <Sup>{savingChange}</Sup> : null
-                                    }
-                                    
+                            <View>
+                                {
+                                    savingChange ? <Sup>{savingChange}</Sup> : null
+                                }
+                            </View>
+                            <View>
+                                <Text fontWeight="bold">/Gal</Text>
+                            </View>
+                            
                         </View>
+                        
                     </MoneySaved>
                 </Col2>
             </Callout>
@@ -153,7 +158,7 @@ const Text = styled.Text`
 `;
 
 const Sup = styled.Text`
-    font-size:10px;
+    font-size:9px;
     font-weight:bold;
     text-align-vertical:top;
     ${props => ({
@@ -281,8 +286,5 @@ const MoneySaved = styled.View`
     align-items:center;
 `;
 
-const BottomPane = styled.View`
-    background:white;
-`;
 
 export default CustomCalloutView
