@@ -3,15 +3,14 @@ import {Root, Container, Button, Header, Content, Thumbnail, View, Title, H3, Se
 import styled from 'styled-components';
 import {Grid, Row, Col} from 'react-native-easy-grid';
 
-
 //app logo
 import logo from '../assets/images/logo.png';
 
 //RN imports
 import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
-//token request endpoint
-const TOKEN_ENDPOINT = 'https://auth.mdshosted.com/auth/realms/mds/protocol/openid-connect/token';
+//token request adapter
+import getToken from '../adapters/get-token.adapter';
 
 const LoginScreen = (props) => {
 
@@ -35,34 +34,41 @@ const LoginScreen = (props) => {
         setLoginDetails({...loginDetails,[field]:text});
     }
 
-    //dummy
-    const user = 'stanleyugwu2018@gmail.com',
-    pass = '123456'
-
     //form submission handler
     const handleSubmit = () => {
 
-        props.navigation.navigate('Home');
-        //destructure details
-        // const {usernameEmail, password} = loginDetails;
+        // destructure details
+        const {usernameEmail, password} = loginDetails;
 
-        // //show error if no details was supplied
-        // if(usernameEmail.trim() && password){
-        //     setLoggingIn(true) ?? setErrorText('');
-        // }else {
-        //     setErrorText('You Supplied Empty Fields..');
-        //     return 
-        // }
+        //show error if no details was supplied
+        if(usernameEmail.trim() && password){
+            setLoggingIn(true) ?? setErrorText('');
+        }else {
+            setErrorText('You Supplied Empty Fields..');
+            return 
+        }
 
-        // //if valid inputs were entered
-        // if(usernameEmail === user && password === pass){
-        //    setTimeout(() => props.navigation.navigate('Home'), 2000);
-        // }else{
-        //    setTimeout(() => {
-        //     setErrorText('Wrong Username or Password');
-        //     setLoggingIn(false);
-        //    }, 2000)
-        // }
+        //if valid inputs were entered get token
+        getToken(usernameEmail,password)
+        .then(res => {
+            if(res.ok) return res.json()
+            else if(res.status == 400) throw Error('Bad Request from app, Please try again')
+            else if(res.status == 401) throw Error('Invalid Username/Email or Password');
+            else throw Error('Request Validation Error')
+        })
+        .then(tokens => {
+            if(tokens && "access_token" in tokens){
+                return props.navigation.navigate('Home',{tokens})
+            }else{
+                throw Error('Invalid Response')
+            }
+        })
+        .catch(error => {
+            //handle network error
+            if(error.message.indexOf('Network request failed') > -1) error.message = `You're not connected to internet`
+            setLoggingIn(false);
+            setErrorText(error.message)
+        })
 
     }
 

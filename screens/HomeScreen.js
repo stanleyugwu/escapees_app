@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Root, Container, Text, Button, Header, Content, Footer, Left, Body, Right, Icon, Grid, Col, Row, View, Spinner, H3, Title,} from 'native-base';
-import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
@@ -21,7 +21,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 //MAIN VIEWS WRAPPER
 import MainViewsWrapper from '../components/MainViews/index';
 
-
+//storage helper packages
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {encrypt, decrypt} from '../utils/cryptor';
 
 const HomeScreen = (props) => {
 
@@ -39,7 +41,7 @@ const HomeScreen = (props) => {
 
     //stations extract based on stations in view
     const stationsInView = stationLocationsData.filter((station) => {
-        return station.locationId == viewingStations
+        return true//station.locationId == viewingStations
     });
 
     //prevent going back to splash screen
@@ -48,19 +50,101 @@ const HomeScreen = (props) => {
     //sorting prameter (1 = Distance, 2 = Price)
     const [sortingParameter,setSortingParameter] = useState(1);
 
-    //data loader
-    const fetchData = () => {
-        setDataLoaded(null);
-        getAllStationLocations()/*then(res => res.json())*/.then(data => {
-            setStationLocationsData(data);
-            setDataLoaded(true);
-        }).catch(error => {
-            setDataLoaded(false);
+    //secure-store-api availability
+    const {dataAvailable, tokens} = props.route.params;//passed params
+
+    // data store key
+    var storeKey = 'eskp_pv_data';
+
+    //data retriever
+    async function retrieveData() {
+        try {   
+        const data = await AsyncStorage.getItem(storeKey);
+        if (data !== null && data.length > 0) {
+            //decrypt data and parse it twice. parsing once doesn't work
+            let decrypted = JSON.parse(JSON.parse(decrypt(data)));
+            return decrypted
+        }else return false
+    
+        } catch (error) {
+            // There was an error on the native side
+            return false
+        }
+    }
+
+    //data persistor
+    async function storeData(data) {
+        try {
+            await AsyncStorage.setItem(
+                storeKey,
+                encrypt(JSON.stringify(data))
+            );
+            //data stored
+        } catch (error) {
+            // There was an error on the native side
+            Alert.alert(
+                null,
+                "Sorry! we couldn't save stations data on your device."
+            )
+        }
+    }
+    
+
+    //online data fetch
+    const fetchData = (token) => {
+        getAllStationLocations(token['access_token'])
+        .then(res => {
+            if(res.ok) return res.json()
+            else throw Error(false);//server error
+        })
+        .then(stationsData => {
+            //data fetched
+            //data validity checks
+            if(stationsData && stationsData instanceof Array){
+                setStationLocationsData(stationsData.slice(0,50));
+                setDataLoaded(true);
+
+                //persist data
+                storeData({
+                    tokens,
+                    stationsData
+                });
+
+            }else throw Error(false);//server error
+        })
+        .catch(error => {
+            if(error.message == false) return props.navigation.navigate('Login');//server error
+            else dataLoaded != false && setDataLoaded(false);//network error
         })
     }
 
+    //data loader
+    const loadData = async () => {
+        setDataLoaded(null);//show loader
+
+        if(dataAvailable){
+            //user logged in before, and data was fetched
+            let data = await retrieveData();
+            //data validity checks
+            if(data && typeof data == 'object' && 'stationsData' in data && 'tokens' in data){
+                setStationLocationsData(data['stationsData'].slice(0,5));
+                setDataLoaded(true);
+                return
+            }else return props.navigation.navigate('Login');//invalid credentials
+
+        }else if(!dataAvailable && tokens && 'access_token' in tokens){
+            //no data but token was passed, (get data online)
+            return fetchData(tokens);
+        }else {
+            //no stored data or token to fetch it
+            return props.navigation.navigate('Login')
+        }
+    }
+
     //resource loader
-    useEffect(fetchData,[])
+    useEffect(() => {
+        loadData();//isomorphic data loader
+    },[])
 
     return (
         <Root>
@@ -96,7 +180,7 @@ const HomeScreen = (props) => {
                         {
                             //false == 'load failed'
                             dataLoaded == false ? (
-                                <FetchError/>
+                                <FetchError retry={loadData}/>
                             ) : null
                         }{/* RESOURCE LOAD ERROR */}
                         

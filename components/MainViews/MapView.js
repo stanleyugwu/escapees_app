@@ -21,12 +21,10 @@ const AppMapView = (props) => {
 
     //initial region (pittsburgh)
     const initialRegion = {
-        // latitude: 40.43,
-        // longitude: -80.01,
-        latitude: 35.734,
-        longitude: -81.3648,
-        latitudeDelta: 0.49,
-        longitudeDelta: 0.49,
+        latitude: 40.43,
+        longitude: -80.01,
+        latitudeDelta: 7,
+        longitudeDelta: 7,
     };
 
     //map reference
@@ -80,7 +78,6 @@ const AppMapView = (props) => {
                 setUserPosition(pos.coords);
 
             },(error) => {
-                console.log(error)
                 setUserPosition(false);//failed or denied by user
                 warn();
             },{enableHighAccuracy:Location.Accuracy.High});

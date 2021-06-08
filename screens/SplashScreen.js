@@ -10,36 +10,52 @@ import {
   Title
 } from "native-base";
 import {Grid, Col, Row} from 'react-native-easy-grid';
-import { Dimensions, ImageBackground, StyleSheet } from "react-native";
+import { Dimensions, ImageBackground, StyleSheet,} from "react-native";
 
-import * as SecureStore from 'expo-secure-store';//credentials store package
+//images
 import logo from "../assets/images/logo.png";//app logo
 import bg from "../assets/images/splash-bg4.jpg";//background image
-import {decrypt} from '../utils/cryptor';//cryptography helper function
+
+//storage options
+import {encrypt, decrypt} from '../utils/cryptor';//cryptography helper
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+//store key
+var storeKey = 'eskp_pv_data';
+
+//data retriever
+async function retrieveData() {
+  try {   
+    const data = await AsyncStorage.getItem(storeKey);
+    if (data !== null && data.length > 0) {
+      //decrypt data and parse it twice. parsing once doesn't work
+      let decrypted = JSON.parse(JSON.parse(decrypt(data)));
+      return decrypted
+
+    }else return false
+
+  } catch (error) {
+      // There was an error on the native side
+      return false
+  }
+}
 
 const SplashScreen = ({ navigation }) => {
 
-
-  //function to extract creds from store
-  const extractData = async () => {
-    let storeName = 'eskp_pv_data';
-    let dataHash = await SecureStore.getItemAsync(storeName);
-    if(!dataHash || dataHash.length < 2) return false
-    let dataObject = decrypt(dataHash);
-    return dataObject instanceof Object ? dataObject : false
-  }
-
   //function to authenticate user
   const authenticateUser = async () => {
-    let dataObject = await extractData();
-    if(dataObject == false) return navigation.navigate('Login');
-
-    if(dataObject && dataObject instanceof Object){
-      return navigation.navigate('Home');
+    //get persisted data
+    let data = await retrieveData();
+    if(!data){
+      return navigation.navigate('Login')
+    }else if(data && typeof data == 'object' && 'stationsData' in data && 'tokens' in data){
+      return navigation.navigate('Home',{dataAvailable:true})
     }
+
   }
 
-  //auto navigate to login screen after 2 seconds of mount
+  //auto navigate to login screen after 1 second of mount
   useEffect(()=>{
     setTimeout(authenticateUser, 1000);
   },[]);

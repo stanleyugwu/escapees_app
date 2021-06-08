@@ -19,14 +19,23 @@ FNu5IYoRdgD6gtArkE7qGwHoANHaNDgsd5T453+Rbg==
 
 const encrypt = (data) => {
     if(!data) return false
-    return crypto.AES.encrypt(JSON.stringify(data), PRIVATE_KEY).toString();
+    try{
+        return crypto.AES.encrypt(data, PRIVATE_KEY).toString();
+    }catch(e){
+        throw Error(e)
+    }
 }
 
 const decrypt = (hash) => {
     if(!hash) return false
-    var bytes = crypto.AES.decrypt(hash, PRIVATE_KEY);
-    var originalData = JSON.parse(bytes.toString(crypto.enc.Utf8));
-    return originalData
+
+    try{
+        var bytes = crypto.AES.decrypt(hash, PRIVATE_KEY);
+        var originalData = bytes.toString(crypto.enc.Utf8);
+        return originalData
+    }catch(e){
+        throw Error(e)
+    }
 }
 
 export {encrypt, decrypt}

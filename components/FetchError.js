@@ -11,7 +11,7 @@ const FetchError = (props) => (
       <TouchableOpacity 
           transparent bordered 
           style={{...styles.Center,...styles.RetryButton}}
-          onPress={props.fetchData}
+          onPress={props.retry}
       >
           <Icon name="refresh" style={{color:'#090'}}/>
           <Text style={{color:'#090',fontWeight:'bold'}}>Try Again</Text>
