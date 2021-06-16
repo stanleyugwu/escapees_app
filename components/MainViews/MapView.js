@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
-import { View, Text, Container, Root, Content, Button, Icon, Grid, Col,} from 'native-base';
+import React, {useEffect, useRef, useMemo} from 'react';
+import { View, Text, Icon, Grid, Col,} from 'native-base';
 import { Alert, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 
 //MAP AND LOCATION PACKAGES

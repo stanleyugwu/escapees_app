@@ -1,13 +1,13 @@
 import React, {useState} from 'react';
-import {Root, Container, Button, Header, Content, Thumbnail, View, Title, H3, Separator, Form, Item, Input, Label, Icon, Card, CardItem, Spinner} from 'native-base';
+import {Root, Container, Button, Content, Thumbnail, Title,Form, Item, Input, Icon, Card, Spinner} from 'native-base';
 import styled from 'styled-components';
-import {Grid, Row, Col} from 'react-native-easy-grid';
+import {Grid, Row,} from 'react-native-easy-grid';
 
 //app logo
 import logo from '../assets/images/logo.png';
 
 //RN imports
-import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 //token request adapter
 import getToken from '../adapters/get-token.adapter';
@@ -58,7 +58,7 @@ const LoginScreen = (props) => {
         })
         .then(tokens => {
             if(tokens && "access_token" in tokens){
-                return props.navigation.navigate('Home',{tokens})
+                return props.navigation.navigate('Home',{passedTokens:tokens})
             }else{
                 throw Error('Invalid Response')
             }

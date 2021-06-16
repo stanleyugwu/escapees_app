@@ -1,11 +1,12 @@
-import React from 'react';
-import {Root, Container, Text, Button, Content, Header, Left, Body, Right, Segment, Subtitle, Thumbnail, Grid, Col, View, Row} from 'native-base';
+import React, { useMemo } from 'react';
+import {Text, Button, Header, Left, Body, Thumbnail, View } from 'native-base';
 
 //app logo
 import logo from '../assets/images/logo.png';
 //icon pack
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { TouchableOpacity } from 'react-native';
+
 
 const AppHeader = (props) => {
 
@@ -15,7 +16,9 @@ const AppHeader = (props) => {
     //station in view
     const stationInView = viewingStations == 1 ? 'Diesel Fuel' : 'Gas';
 
-    return (
+    //memoize for speed
+    return useMemo(() => {
+        return (
             <View>
                 <Header
                     backgroundColor="#fff"
@@ -51,7 +54,9 @@ const AppHeader = (props) => {
                 </View>
             </View>
         
-    )
+        )
+    }, [viewingStations, stationsDisplayView, dataLoaded]);//re-render determinants
+
 };
 
 export default AppHeader

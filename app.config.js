@@ -4,6 +4,7 @@ module.exports = ({config}) => {
     return {
       ...config,
       android: {
+        versionCode:1,
         allowBackup: false,
         package: "com.escapees.fuelapp",
         config: {
