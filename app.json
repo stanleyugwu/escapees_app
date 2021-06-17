@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Escapees_App",
-    "slug": "Escapees_App",
+    "name": "Escapees App",
+    "slug": "EscapeesApp",
     "version": "1.0.0",
     "entryPoint": "./index.js",
     "orientation": "portrait",
@@ -19,6 +19,7 @@
       "**/*"
     ],
     "ios": {
+      "buildNumber": "1.0.0",
       "supportsTablet": true,
       "bundleIdentifier": "com.escapees.fuelapp",
       "infoPlist": {

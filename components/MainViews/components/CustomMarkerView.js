@@ -1,5 +1,4 @@
 import React from 'react';
-import {TouchableOpacity, Platform,} from 'react-native';
 import {Icon} from 'native-base';
 import styled from 'styled-components/native';
 

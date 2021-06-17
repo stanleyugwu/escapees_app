@@ -1,7 +1,7 @@
 import React from 'react';
-import {View, TouchableOpacity, Alert} from 'react-native';
+import {View} from 'react-native';
 import styled from 'styled-components/native';
-import {Grid, Row, Col,} from 'react-native-easy-grid';
+import {Grid, Col,Row} from 'react-native-easy-grid';
 import {Icon} from 'native-base';
 
 //This component is polymorphic, its used by Map and StationsListView Components
@@ -73,12 +73,25 @@ const CustomCalloutView = (props) => {
                         <AddressWrapper>
                             <HighWay>
                                 <Text color="#aaa">Highway:</Text>
-                                <Text fontWeight="bold" fontSize={12}>{s.address1}</Text>
+                                <Text fontWeight="bold" fontSize={12} numberOfLines={2}>{s.address1}</Text>
                             </HighWay>
 
                             <Address>
                                 <Text color="#aaa">Address:</Text>
-                                <Text fontWeight="bold" fontSize={12}>{s.address2}</Text>
+                                <Text numberOfLines={2}>
+                                    <Grid>
+                                        {
+                                            //split address into multi-lines to avoid overflow
+                                            s.address2.match(/.{1,15}/g).map((chunk, idx) => {
+                                                return (
+                                                    <Row key={idx}>
+                                                        <Text fontWeight="bold" fontSize={12}>{chunk}</Text>
+                                                    </Row>
+                                                )
+                                            })
+                                        }
+                                    </Grid>
+                                </Text>
                                 <Text fontWeight="bold" fontSize={12}>{s.city + ", " + s.state + " " + s.zipCode}</Text>
                             </Address>
                         </AddressWrapper>
@@ -177,6 +190,7 @@ const Callout = styled.View`
     background:white;
     padding:6px;
     flex-direction:row;
+    overflow:scroll;
     align-items:center;
     border-width:1px;
     border-color:#999;
@@ -242,7 +256,6 @@ const HighWay = styled.View`
 
 `;
 const Address = styled.View`
-    
 `;
 // ====== AddressWrapper
 
@@ -259,9 +272,10 @@ const Services = styled.View`
 
 const Col2 = styled.View`
     display:flex;
-    padding-left:5px;
     flex-direction:column;
     align-items:center;
+    justify-content:center;
+    padding-left:5px;
 `;
 const RegularPrice = styled.View`
     display:flex;

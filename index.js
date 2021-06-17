@@ -1,7 +1,6 @@
 import 'react-native-gesture-handler';
 import React from 'react';
 import {registerRootComponent} from 'expo';
-import {View, Text, TouchableOpacity} from 'react-native';
 
 //navigation packages
 import { NavigationContainer } from '@react-navigation/native';

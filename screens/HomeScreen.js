@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Root, Container, Text, Button, Header, Content, Footer, Left, Body, Right, Icon, Grid, Col, Row, View, Spinner, H3, Title,} from 'native-base';
-import { Alert, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { Root, Container, Content, Footer, Icon, Grid, Col, Row, View,} from 'native-base';
+import { Alert,StyleSheet, TouchableOpacity } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
@@ -47,11 +47,14 @@ const HomeScreen = (props) => {
     //prevent going back to splash screen
     props.navigation.addListener('beforeRemove', e => e.preventDefault());
 
-    //sorting prameter (1 = Distance, 2 = Price)
+    //sorting prameter (1 = Price, 2 = Distance)
     const [sortingParameter,setSortingParameter] = useState(1);
 
+    //user current latLng position
+    const [userPosition, setUserPosition] = useState(null);
+
     //secure-store-api availability
-    const {dataAvailable, tokens} = props.route.params;//passed params
+    const {dataAvailable, passedTokens} = props.route.params;//passed params
 
     // data store key
     var storeKey = 'eskp_pv_data';
@@ -62,7 +65,7 @@ const HomeScreen = (props) => {
         const data = await AsyncStorage.getItem(storeKey);
         if (data !== null && data.length > 0) {
             //decrypt data and parse it twice. parsing once doesn't work
-            let decrypted = JSON.parse(JSON.parse(decrypt(data)));
+            let decrypted = JSON.parse(decrypt(data));
             return decrypted
         }else return false
     
@@ -83,8 +86,8 @@ const HomeScreen = (props) => {
         } catch (error) {
             // There was an error on the native side
             Alert.alert(
-                null,
-                "Sorry! we couldn't save stations data on your device."
+                "Couldn't save stations data",
+                error.message
             )
         }
     }
@@ -101,12 +104,12 @@ const HomeScreen = (props) => {
             //data fetched
             //data validity checks
             if(stationsData && stationsData instanceof Array){
-                setStationLocationsData(stationsData.slice(0,50));
+                setStationLocationsData(stationsData.slice(0,500));
                 setDataLoaded(true);
 
                 //persist data
                 storeData({
-                    tokens,
+                    token,
                     stationsData
                 });
 
@@ -126,15 +129,15 @@ const HomeScreen = (props) => {
             //user logged in before, and data was fetched
             let data = await retrieveData();
             //data validity checks
-            if(data && typeof data == 'object' && 'stationsData' in data && 'tokens' in data){
-                setStationLocationsData(data['stationsData'].slice(0,5));
+            if(data && typeof data == 'object' && 'stationsData' in data && 'token' in data){
+                setStationLocationsData(data['stationsData'].slice(0,500));
                 setDataLoaded(true);
                 return
             }else return props.navigation.navigate('Login');//invalid credentials
 
-        }else if(!dataAvailable && tokens && 'access_token' in tokens){
+        }else if(!dataAvailable && passedTokens && 'access_token' in passedTokens){
             //no data but token was passed, (get data online)
-            return fetchData(tokens);
+            return fetchData(passedTokens);
         }else {
             //no stored data or token to fetch it
             return props.navigation.navigate('Login')
@@ -165,6 +168,9 @@ const HomeScreen = (props) => {
                                     setStationsDisplayView={setStationsDisplayView} 
                                     stationsInView={stationsInView}
                                     stationsDisplayView={stationsDisplayView}
+                                    userPosition={userPosition}
+                                    setUserPosition={setUserPosition}
+                                    sortingParameter={sortingParameter}
                                 />
                             ) : null 
                         }
@@ -213,6 +219,8 @@ const HomeScreen = (props) => {
                                     <SortSwitch
                                         sortingParameter={sortingParameter}
                                         setSortingParameter={setSortingParameter}
+                                        //disable sort toggle if no user position 
+                                        notToggleable={!userPosition ? true : false}
                                     />
                                 ) : null
                             }

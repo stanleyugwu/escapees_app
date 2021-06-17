@@ -8,10 +8,7 @@ import ListView from './StationsListView';
 const MainViewsWrapper = (props) => {
 
     //props destructure
-    const {stationsInView,setStationsDisplayView,stationsDisplayView} = props;
-
-    //user current latLng position
-    const [userPosition, setUserPosition] = useState(null);
+    const {stationsInView,setStationsDisplayView,stationsDisplayView, userPosition, setUserPosition,sortingParameter} = props;
 
     return (
         <View>
@@ -33,6 +30,7 @@ const MainViewsWrapper = (props) => {
                 <ListView
                     stationLocationsData={stationsInView}
                     userPosition={userPosition}
+                    sortingParameter={sortingParameter}
                 />
             </View>
         </View>

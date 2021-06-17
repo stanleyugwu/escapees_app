@@ -1,4 +1,3 @@
-import allStationLocations from '../dummy-api-data-models/all-station-locations.json';
 import Constants from 'expo-constants';
 
 const stationsDataEndpoint = Constants.manifest.extra.stations_data_endpoint;

@@ -9,15 +9,15 @@ import {
   View,
   Title
 } from "native-base";
-import {Grid, Col, Row} from 'react-native-easy-grid';
+import {Grid, Row} from 'react-native-easy-grid';
 import { Dimensions, ImageBackground, StyleSheet,} from "react-native";
 
 //images
 import logo from "../assets/images/logo.png";//app logo
-import bg from "../assets/images/splash-bg4.jpg";//background image
+// import bg from "../assets/images/splash-bg4.jpg";//background image
 
 //storage options
-import {encrypt, decrypt} from '../utils/cryptor';//cryptography helper
+import {decrypt} from '../utils/cryptor';//cryptography helper
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
@@ -29,8 +29,8 @@ async function retrieveData() {
   try {   
     const data = await AsyncStorage.getItem(storeKey);
     if (data !== null && data.length > 0) {
-      //decrypt data and parse it twice. parsing once doesn't work
-      let decrypted = JSON.parse(JSON.parse(decrypt(data)));
+      //decrypt data and parse it.
+      let decrypted = JSON.parse(decrypt(data));
       return decrypted
 
     }else return false
@@ -47,11 +47,15 @@ const SplashScreen = ({ navigation }) => {
   const authenticateUser = async () => {
     //get persisted data
     let data = await retrieveData();
+    
     if(!data){
       return navigation.navigate('Login')
-    }else if(data && typeof data == 'object' && 'stationsData' in data && 'tokens' in data){
+    }else if(data && typeof data == 'object' && 'stationsData' in data && 'token' in data){
       return navigation.navigate('Home',{dataAvailable:true})
+    }else {
+      return navigation.navigate('Login')
     }
+
 
   }
 

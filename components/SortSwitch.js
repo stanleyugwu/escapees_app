@@ -11,8 +11,8 @@ const SortSwitch = (props) => {
     //Switch dependency didn't set it
     LogBox.ignoreLogs(["Animated: `useNativeDriver`"]);
 
-    //props sorting paramter destructure /-> 1 = Distance, 2 = Price <-/
-    const { setSortingParameter, sortingParameter } = props;
+    //props sorting paramter destructure /-> 1 = Price, 2 = Distance <-/
+    const { setSortingParameter, sortingParameter , notToggleable} = props;
 
     return (
         <Switch
@@ -22,8 +22,9 @@ const SortSwitch = (props) => {
             onValueChange={v => {
                 setSortingParameter(sortingParameter == 1 ? 2 : 1);   
             }}
-            activeText="Distance"
-            inActiveText="Price"
+            disabled={notToggleable}
+            activeText="Price"
+            inActiveText="Distance"
             backgroundActive="#ccc"
             backgroundInactive="#ccc"
             circleActiveColor="#fff"
@@ -48,7 +49,7 @@ const SortSwitch = (props) => {
                         fontSize:13,
                     }}
                 >
-                    {sortingParameter == 1 ? "Distance" : "Price"}
+                    {sortingParameter == 1 ? "Price" : "Distance"}
                 </Text>
             )}
         />
