@@ -13,7 +13,7 @@ import FetchLoader from '../components/FetchLoader';//resource fetch loader
 import FetchError from '../components/FetchError';//fetch error view
 
 //resource adapters
-import getAllStationLocations from '../adapters/gas-stations.adapter'//'../adapters/all-stations.adapter';
+import getAllStationLocations from '../adapters/all-stations.adapter';
 
 //Icon set
 import { MaterialIcons } from "@expo/vector-icons";
@@ -146,11 +146,7 @@ const HomeScreen = (props) => {
 
     //resource loader
     useEffect(() => {
-        // loadData();//isomorphic data loader
-        getAllStationLocations().then(res => {
-            setDataLoaded(true);
-            setStationLocationsData(res)
-        })
+        loadData();//isomorphic data loader
     },[])
 
     return (

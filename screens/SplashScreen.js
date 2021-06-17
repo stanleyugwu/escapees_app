@@ -36,7 +36,6 @@ async function retrieveData() {
     }else return false
 
   } catch (error) {
-    console.log('error',error)
       // There was an error on the native side
       return false
   }
@@ -62,8 +61,7 @@ const SplashScreen = ({ navigation }) => {
 
   //auto navigate to login screen after 1 second of mount
   useEffect(()=>{
-    // setTimeout(authenticateUser, 1000);
-    navigation.navigate('Home',{dataAvailable:true});
+    setTimeout(authenticateUser, 1000);
   },[]);
 
   return (
