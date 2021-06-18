@@ -10,7 +10,7 @@
         "latitude": 40.734,
         "longitude": -81.3648,
         "regularPrice": "2.819",
-        "memberPrice": "2.605"
+        "memberPrice": "2.805"
     },
     {
         "locationId":2,
@@ -36,7 +36,7 @@
         "latitude": 35.734,
         "longitude": -71.3648,
         "regularPrice": "2.899",
-        "memberPrice": "2.384"
+        "memberPrice": "2.344"
     },
     {
         "locationId":2,
@@ -49,7 +49,7 @@
         "latitude": 30.9366,
         "longitude": -70.5228,
         "regularPrice": "2.899",
-        "memberPrice": "2.384"
+        "memberPrice": "2.381"
     },
     {
         "locationId":1,
@@ -75,7 +75,7 @@
         "latitude": 30.9366,
         "longitude": -90.5228,
         "regularPrice": "2.899",
-        "memberPrice": "2.384"
+        "memberPrice": "2.383"
     },
     {
         "locationId":1,
@@ -101,6 +101,6 @@
         "latitude": 30.9366,
         "longitude": -70.5228,
         "regularPrice": "2.899",
-        "memberPrice": "2.384"
+        "memberPrice": "2.386"
     }
 ]

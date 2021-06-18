@@ -11,7 +11,7 @@ import { TouchableOpacity } from 'react-native';
 const AppHeader = (props) => {
 
     //props destructure
-    const {viewingStations, stationsDisplayView, setStationsDisplayView,dataLoaded} = props;
+    const {viewingStations, dataLoaded} = props;
     
     //station in view
     const stationInView = viewingStations == 1 ? 'Diesel Fuel' : 'Gas';
@@ -27,7 +27,7 @@ const AppHeader = (props) => {
                     noShadow={true}
                     androidStatusBarColor={viewingStations == 1 ? '#090' : 'red'}
                 >
-                    <Left style={{maxWidth:'15%',paddingTop:11}}>
+                    {/* <Left style={{maxWidth:'15%',paddingTop:11}}>
                         {
                             //only show arrow on stations-list-view
                             stationsDisplayView == 2 ? (
@@ -38,7 +38,7 @@ const AppHeader = (props) => {
                                 </Button>
                             ) : null
                         }
-                    </Left>
+                    </Left> */}
                     <Body>
                         <Thumbnail large source={logo} square resizeMode="contain" style={{width:'100%',height:'100%'}}/>
                     </Body>
@@ -55,7 +55,7 @@ const AppHeader = (props) => {
             </View>
         
         )
-    }, [viewingStations, stationsDisplayView, dataLoaded]);//re-render determinants
+    }, [viewingStations,dataLoaded]);//re-render determinants
 
 };
 
