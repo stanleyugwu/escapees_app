@@ -16,53 +16,39 @@ import { Dimensions, ImageBackground, StyleSheet,} from "react-native";
 import logo from "../assets/images/logo.png";//app logo
 // import bg from "../assets/images/splash-bg4.jpg";//background image
 
-//storage options
-import {decrypt} from '../utils/cryptor';//cryptography helper
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {retrieveData} from '../utils/localDataAdapters';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 //store key
 var storeKey = 'eskp_pv_data';
-
-//data retriever
-async function retrieveData() {
-  try {   
-    const data = await AsyncStorage.getItem(storeKey);
-    if (data !== null && data.length > 0) {
-      //decrypt data and parse it.
-      let decrypted = JSON.parse(decrypt(data));
-      return decrypted
-
-    }else return false
-
-  } catch (error) {
-      // There was an error on the native side
-      return false
-  }
-}
 
 const SplashScreen = ({ navigation }) => {
 
   //function to authenticate user
   const authenticateUser = async () => {
     //get persisted data
-    let data = await retrieveData();
+    let data = await retrieveData(storeKey,true);
     
     if(!data){
       return navigation.navigate('Login')
-    }else if(data && typeof data == 'object' && 'stationsData' in data && 'token' in data){
+    }else if(
+      data && typeof data == 'object' &&
+      'stationsData' in data && 
+      data['stationsData'] &&
+      'login' in data
+    ){
       return navigation.navigate('Home',{dataAvailable:true})
     }else {
       return navigation.navigate('Login')
     }
 
-
   }
 
   //auto navigate to login screen after 1 second of mount
   useEffect(()=>{
-    // setTimeout(authenticateUser, 1000);
-    navigation.navigate('Home',{dataAvailable:true});
+    setTimeout(authenticateUser, 1000);
+    // navigation.navigate('Home',{dataAvailable:true});
   },[]);
 
   return (

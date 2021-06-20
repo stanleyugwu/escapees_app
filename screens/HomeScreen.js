@@ -13,7 +13,7 @@ import FetchLoader from '../components/FetchLoader';//resource fetch loader
 import FetchError from '../components/FetchError';//fetch error view
 
 //resource adapters
-import getAllStationLocations from '../adapters/gas-stations.adapter';
+import getAllStationLocations from '../adapters/all-stations.adapter';
 
 //Icon set
 import { MaterialIcons } from "@expo/vector-icons";
@@ -21,28 +21,31 @@ import { MaterialIcons } from "@expo/vector-icons";
 //MAIN VIEWS WRAPPER
 import MainViewsWrapper from '../components/MainViews/index';
 
-//storage helper packages
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {encrypt, decrypt} from '../utils/cryptor';
+//data storage and retrieval utils
+import {storeData, retrieveData} from '../utils/localDataAdapters';
+
+// //storage helper packages
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+// import {encrypt, decrypt} from '../utils/cryptor';
 
 const HomeScreen = (props) => {
 
     //currently showing station type (1 = diesel, 2 = gas)
     const [viewingStations, setViewingStations] = useState(1);
 
-    //currently showing stations display type (1 = MapView, 2 = ListView, 3 = Transactions, )
+    //currently showing stations display type (1 = MapView, 2 = ListView )
     const [stationsDisplayView, setStationsDisplayView] = useState(1);
 
     //track data fetch progress (null = 'loading', true = 'loaded', false = 'encountered error')
     const [dataLoaded, setDataLoaded] = useState(null);//default is loading
 
     //resource data
-    const [stationLocationsData, setStationLocationsData] = useState([]);
+    const [stationLocationsData, setStationLocationsData] = useState(null);
 
     //stations extract based on stations in view
-    const stationsInView = stationLocationsData.filter((station) => {
+    const stationsInView = stationLocationsData ? stationLocationsData.filter((station) => {
         return true//station.locationId == viewingStations
-    });
+    }) : [];
 
     //prevent going back to splash screen
     props.navigation.addListener('beforeRemove', e => e.preventDefault());
@@ -57,48 +60,49 @@ const HomeScreen = (props) => {
     const [slideUpMenuVisible, setSlideUpMenuVisibile] = useState(0);
 
     //secure-store-api availability
-    const {dataAvailable, passedTokens} = props.route.params;//passed params
-
-    // data store key
-    var storeKey = 'eskp_pv_data';
+    const {dataAvailable, passedToken, login} = props.route.params;//passed params
 
     //data retriever
-    async function retrieveData() {
-        try {   
-        const data = await AsyncStorage.getItem(storeKey);
-        if (data !== null && data.length > 0) {
-            //decrypt data and parse it twice. parsing once doesn't work
-            let decrypted = JSON.parse(decrypt(data));
-            return decrypted
-        }else return false
+    // async function retrieveData() {
+    //     try {   
+    //     const data = await AsyncStorage.getItem(storeKey);
+    //     if (data !== null && data.length > 0) {
+    //         //decrypt data and parse it twice. parsing once doesn't work
+    //         let decrypted = JSON.parse(decrypt(data));
+    //         return decrypted
+    //     }else return false
     
-        } catch (error) {
-            // There was an error on the native side
-            return false
-        }
-    }
+    //     } catch (error) {
+    //         // There was an error on the native side
+    //         return false
+    //     }
+    // }
 
-    //data persistor
-    async function storeData(data) {
-        try {
-            await AsyncStorage.setItem(
-                storeKey,
-                encrypt(JSON.stringify(data))
-            );
-            //data stored
-        } catch (error) {
-            // There was an error on the native side
-            Alert.alert(
-                "Couldn't save stations data",
-                error.message
-            )
-        }
-    }
+    // //data persistor
+    // async function storeData(data) {
+    //     try {
+    //         await AsyncStorage.setItem(
+    //             storeKey,
+    //             encrypt(JSON.stringify(data))
+    //         );
+    //         //data stored
+    //     } catch (error) {
+    //         // There was an error on the native side
+    //         Alert.alert(
+    //             "Couldn't save stations data",
+    //             error.message
+    //         )
+    //     }
+    // }
     
 
     //online data fetch
-    const fetchData = (token) => {
-        getAllStationLocations(token['access_token'])
+    const fetchData = (token, username, password) => {
+
+        // data store key
+        var storeKey = 'eskp_pv_data';
+
+        getAllStationLocations(token)
         .then(res => {
             if(res.ok) return res.json()
             else throw Error(false);//server error
@@ -107,40 +111,63 @@ const HomeScreen = (props) => {
             //data fetched
             //data validity checks
             if(stationsData && stationsData instanceof Array){
-                setStationLocationsData(stationsData.slice(0,500));
-                setDataLoaded(true);
+                setStationLocationsData(stationsData.slice(0,50));
 
                 //persist data
-                storeData({
-                    token,
+                let stored = storeData(storeKey,{
+                    'login':{
+                        'usernameOrEmail':username,
+                        'password':password
+                    },
                     stationsData
-                });
+                },true);
+
+                stationsData = null;//clear memory
+
+                if(!stored) throw Error('native side error');//error while storing
 
             }else throw Error(false);//server error
         })
         .catch(error => {
             if(error.message == false) return props.navigation.navigate('Login');//server error
-            else dataLoaded != false && setDataLoaded(false);//network error
+            else if(error.message == 'native side error') return props.navigation.navigate('Login')
+            else stationLocationsData != false && setStationLocationsData(false);//network error
         })
     }
 
     //data loader
     const loadData = async () => {
-        setDataLoaded(null);//show loader
+
+        var storeKey = 'eskp_pv_data';//data store key
+        // setDataLoaded(null);//show loader
 
         if(dataAvailable){
             //user logged in before, and data was fetched
-            let data = await retrieveData();
+            let data = await retrieveData(storeKey,true);
+
             //data validity checks
-            if(data && typeof data == 'object' && 'stationsData' in data && 'token' in data){
-                setStationLocationsData(data['stationsData'].slice(0,500));
-                setDataLoaded(true);
+            if(
+                data && typeof data == 'object' &&
+                'stationsData' in data && 
+                data['stationsData'] &&
+                'login' in data
+            ){
+                setStationLocationsData(data['stationsData'].slice(0,50));
+                data = null;//clear memory
+                // setDataLoaded(true);
                 return
             }else return props.navigation.navigate('Login');//invalid credentials
 
-        }else if(!dataAvailable && passedTokens && 'access_token' in passedTokens){
+        }else if(
+            !dataAvailable &&
+            passedToken && 
+            !!login && 
+            'usernameOrEmail' in login && 
+            'password' in login
+        ){
+
             //no data but token was passed, (get data online)
-            return fetchData(passedTokens);
+            return fetchData(passedToken,login['usernameOrEmail'],login['password']);
         }else {
             //no stored data or token to fetch it
             return props.navigation.navigate('Login')
@@ -149,13 +176,13 @@ const HomeScreen = (props) => {
 
     //resource loader
     useEffect(() => {
-        // loadData();//isomorphic data loader
-        getAllStationLocations().then((res) => {
-            setDataLoaded(true);
-            setStationLocationsData(res);
-        }).catch(e => {
-            setDataLoaded(false);
-        })
+        loadData();//isomorphic data loader
+        // getAllStationLocations().then((res) => {
+        //     setDataLoaded(true);
+        //     setStationLocationsData(res);
+        // }).catch(e => {
+        //     setDataLoaded(false);
+        // })
     },[])
 
     return (
@@ -163,14 +190,15 @@ const HomeScreen = (props) => {
             <Container>
                 <AppHeader
                     viewingStations={viewingStations}
-                    dataLoaded={dataLoaded}
+                    dataLoaded={!stationLocationsData ? false : true}
+                    showViewStatusBar={true}
                 />
 
                 <Content contentContainerStyle={{flex:1,}}>
                     <View style={{flex:1,backgroundColor:'transparent'}}>
                         {
-                            //true == 'loaded'
-                            dataLoaded == true ? (
+                            //data exists and not empty array
+                            stationLocationsData && stationLocationsData.length ? (
                                 <MainViewsWrapper
                                     setStationsDisplayView={setStationsDisplayView} 
                                     stationsInView={stationsInView}
@@ -185,14 +213,14 @@ const HomeScreen = (props) => {
 
                         {
                             //null == 'loading'
-                            dataLoaded == null ? (
+                            stationLocationsData == null ? (
                                 <FetchLoader/>
                             ) : null
                         }{/* RESOURCE LOAD INDICATOR */}
                             
                         {
                             //false == 'load failed'
-                            dataLoaded == false ? (
+                            stationLocationsData == false ? (
                                 <FetchError retry={loadData}/>
                             ) : null
                         }{/* RESOURCE LOAD ERROR */}
@@ -228,7 +256,10 @@ const HomeScreen = (props) => {
                         {/* menu items (preferences)*/}
 
                         <Row style={styles.RowStyle}>
-                            <TouchableOpacity style={styles.MenuItemTouchable}>
+                            <TouchableOpacity
+                                style={styles.MenuItemTouchable}
+                                onPress={() => props.navigation.navigate('Transactions')}
+                            >
                                 <Col size={33} style={styles.MenuItemIconWrapper}>
                                     <Icon name="receipt" type="MaterialCommunityIcons"/>
                                 </Col>
@@ -271,7 +302,12 @@ const HomeScreen = (props) => {
                         <Row size={38}>
                             <TouchableHighlight
                                 onPress={() => setStationsDisplayView(stationsDisplayView == 1 ? 2 : 1)}
-                                style={{backgroundColor:'#3597e2',width:'100%',...styles.Center}}
+                                style={{
+                                    backgroundColor:'#3597e2',
+                                    width:'100%',
+                                    display:stationLocationsData && stationLocationsData.length ? 'flex' : 'none',
+                                    ...styles.Center
+                                }}
                             >
                                 <Text style={{color:'white',fontWeight:'700'}}>
                                     {
@@ -285,7 +321,7 @@ const HomeScreen = (props) => {
                         <Row size={62}>
                             <Col style={styles.Center} size={35}>
                                 {
-                                    dataLoaded ? (
+                                    stationLocationsData && stationLocationsData.length ? (
                                         <StationSwitch viewingStations={viewingStations} setViewingStations={setViewingStations}/>
                                     ) : null
                                 }
@@ -293,12 +329,12 @@ const HomeScreen = (props) => {
 
                             <Col size={35} style={styles.Center}>
                                 {
-                                    stationsDisplayView == 2 && dataLoaded ? (
+                                    stationsDisplayView == 2 && (stationLocationsData && stationLocationsData.length) ? (
                                         <SortSwitch
                                             sortingParameter={sortingParameter}
                                             setSortingParameter={setSortingParameter}
                                             //disable sort toggle if no user position 
-                                            notToggleable={!userPosition ? true : false}
+                                            notToggleable={userPosition == false || userPosition == 'true' ? true : false}
                                         />
                                     ) : null
                                 }
