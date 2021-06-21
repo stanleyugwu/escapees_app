@@ -6,12 +6,10 @@ import {encrypt, decrypt} from '../utils/cryptor';
 async function retrieveData(storeKey, decryptData = true) {
     try {   
         const data = await AsyncStorage.getItem(storeKey);
-        if (data != null) {
-
-            //decrypt data if decryptData paramter says so
-            let decrypted = JSON.parse(decryptData ? decrypt(data) : data);
-            return decrypted
-        }else return null
+        
+        if(data == null) return null
+        let decrypted = JSON.parse(decryptData ? decrypt(data) : data);
+        return decrypted
 
     } catch (error) {
         // There was an error on the native side
