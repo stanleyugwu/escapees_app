@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Root, Container, Content, Footer, Icon, Grid, Col, Row, View, Text} from 'native-base';
-import { Alert,StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
@@ -24,10 +24,6 @@ import MainViewsWrapper from '../components/MainViews/index';
 //data storage and retrieval utils
 import {storeData, retrieveData} from '../utils/localDataAdapters';
 
-// //storage helper packages
-// import AsyncStorage from '@react-native-async-storage/async-storage';
-// import {encrypt, decrypt} from '../utils/cryptor';
-
 const HomeScreen = (props) => {
 
     //currently showing station type (1 = diesel, 2 = gas)
@@ -36,10 +32,7 @@ const HomeScreen = (props) => {
     //currently showing stations display type (1 = MapView, 2 = ListView )
     const [stationsDisplayView, setStationsDisplayView] = useState(1);
 
-    //track data fetch progress (null = 'loading', true = 'loaded', false = 'encountered error')
-    const [dataLoaded, setDataLoaded] = useState(null);//default is loading
-
-    //resource data
+    //resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
     const [stationLocationsData, setStationLocationsData] = useState(null);
 
     //stations extract based on stations in view
@@ -61,40 +54,6 @@ const HomeScreen = (props) => {
 
     //secure-store-api availability
     const {dataAvailable, passedToken, login} = props.route.params;//passed params
-
-    //data retriever
-    // async function retrieveData() {
-    //     try {   
-    //     const data = await AsyncStorage.getItem(storeKey);
-    //     if (data !== null && data.length > 0) {
-    //         //decrypt data and parse it twice. parsing once doesn't work
-    //         let decrypted = JSON.parse(decrypt(data));
-    //         return decrypted
-    //     }else return false
-    
-    //     } catch (error) {
-    //         // There was an error on the native side
-    //         return false
-    //     }
-    // }
-
-    // //data persistor
-    // async function storeData(data) {
-    //     try {
-    //         await AsyncStorage.setItem(
-    //             storeKey,
-    //             encrypt(JSON.stringify(data))
-    //         );
-    //         //data stored
-    //     } catch (error) {
-    //         // There was an error on the native side
-    //         Alert.alert(
-    //             "Couldn't save stations data",
-    //             error.message
-    //         )
-    //     }
-    // }
-    
 
     //online data fetch
     const fetchData = (token, username, password) => {
@@ -177,12 +136,6 @@ const HomeScreen = (props) => {
     //resource loader
     useEffect(() => {
         loadData();//isomorphic data loader
-        // getAllStationLocations().then((res) => {
-        //     setDataLoaded(true);
-        //     setStationLocationsData(res);
-        // }).catch(e => {
-        //     setDataLoaded(false);
-        // })
     },[])
 
     return (
@@ -244,7 +197,10 @@ const HomeScreen = (props) => {
                         {/* Close button */}
 
                         <Row style={styles.RowStyle}>
-                            <TouchableOpacity style={styles.MenuItemTouchable}>
+                            <TouchableOpacity
+                                style={styles.MenuItemTouchable}
+                                onPress={() => props.navigation.navigate('Preferences')}
+                            >
                                 <Col size={33} style={styles.MenuItemIconWrapper}>
                                     <Icon name="star-sharp" type="Ionicons"/>
                                 </Col>

@@ -28,7 +28,7 @@ const SplashScreen = ({ navigation }) => {
   //function to authenticate user
   const authenticateUser = async () => {
     //get persisted data
-    let data = await retrieveData(storeKey,true);
+    var data = await retrieveData(storeKey,true);
     
     if(!data){
       return navigation.navigate('Login')
@@ -48,7 +48,6 @@ const SplashScreen = ({ navigation }) => {
   //auto navigate to login screen after 1 second of mount
   useEffect(()=>{
     setTimeout(authenticateUser, 1000);
-    // navigation.navigate('Home',{dataAvailable:true});
   },[]);
 
   return (

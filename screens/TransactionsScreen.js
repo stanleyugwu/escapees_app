@@ -1,88 +1,90 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Root, Container, Content, Footer, Icon, Grid, Col, Row, View, Text, Button, Title } from 'native-base';
-import { Alert, ScrollView, StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableHighlight, TouchableOpacity, RefreshControl } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
 import FetchLoader from '../components/FetchLoader';
 
-//local storage utils
+//local storage utils and adapters
 import { storeData, retrieveData } from '../utils/localDataAdapters';
-
-//dummy transactions
-import data from '../dummy-api-data-models/transactions-response.json';
+import getToken from '../adapters/get-token.adapter';
+import getTransactions from '../adapters/transactions.adapter';
 
 //Table components
-import { Table, Row as TableRow, Rows, TableWrapper } from 'react-native-table-component';
+import { Table, Row as TableRow, } from 'react-native-table-component';
 
 const TransactionsScreen = (props) => {
-
-    const storeKey = 'eskp_pv_transactions';
 
     //transactions data mock
     const [transactions, setTransactions] = useState(null);
 
+    //data refresh state
+    const [refreshing, setRefreshing] = useState(false);
+
+    const storeKey = 'eskp_pv_transactions';//transactions store key
+
+
     //fetch transactions data with refresh token
     const fetchAndStoreTransactions = async () => {
-        let tokenStoreKey = 'eskp_pv_data';
 
-        let storedData = await retrieveData(tokenStoreKey, true);
-        if (storedData) {
-            let token = storedData['token']['refresh_token'];
-            console.log(token)
-            getAccessTokenWithRefresh(token)
+        setRefreshing(true);//table refreshing data
+
+        let dataStoreKey = 'eskp_pv_data';
+
+        let storedData = await retrieveData(dataStoreKey, true);
+        if (storedData && typeof storedData == 'object' && 'login' in storedData) {
+
+            let {usernameOrEmail, password} = storedData['login'];//stored login details
+
+            getToken(usernameOrEmail,password)
             .then(res => {
-                return res.json()
-                // else console.log(res.text())
+                if(res.ok) return res.json()
+                else throw Error('Error')
             })
-            .then(data => {
-                //token gotten
-                console.log(data)
+            .then(tokens => {
+                if(tokens && "access_token" in tokens){
+                    return tokens['access_token'];
+                } else throw Error('Error')
+            })
+            .then(accessToken => {
+                /**
+                 * ERROR BELOW
+                 */
+                //fetch transactions
+                getTransactions(accessToken)
+                .then(res => {
+                    console.log(res.ok);//this is false
+                })
+                .catch(e => {
+                    console.log('error',e)
+                })
+
+                // if(result instanceof Array){
+                //     //load transactions
+                //     setTransactions(result);
+                //     setRefreshing(false);
+
+                //     //store data
+                //     let stored = storeData(storeKey,result,false);
+                //     if(!stored) alert('error storing transactions data')
+                // }
+                // else if (result == false) throw Error('Error');//request error
+                // else throw Error();//network error
+
             })
             .catch(error => {
-                if(error.message == false) console.log('failed')//props.navigation.navigate('Login');//server error
-                else console.log(error)//dataLoaded != false && setDataLoaded(false);//network error
-            })
-        } else return //props.navigation.navigate('Login')
-    }
-
-    const getAccessTokenWithRefresh = (refreshToken) => {
-
-        const TOKEN_ENDPOINT = 'https://auth.mdshosted.com/auth/realms/mds/protocol/openid-connect/token';
-
-        //request headers
-        var myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-        // myHeaders.append("Cookie", "Cookie_1=value; UTGv2=D-h41e35427b78482eaa143250e359c0aa0066; SPSI=90bb31727e73e3579080cb102cb444d7; SPSE=JQv6Qw0yaH4pkWNQ8uASreUpHyTouXgYlSkWiC5nrDQxwUlh+NBAc6zDdWJIRiWSWl0qaoG5gB4/QOvAdgt5kg==");
-
-        //un-encoded fetch body details
-        var details = {
-            'client_id': 'admin-ui',
-            'grant_type': 'refresh_token',
-            'refresh_token': refreshToken,
-        };
-
-        //encoded body
-        var formBody = [];
-
-        //populate formData with encoded data
-        for (var property in details) {
-        var encodedKey = encodeURIComponent(property);
-        var encodedValue = encodeURIComponent(details[property]);
-        formBody.push(encodedKey + "=" + encodedValue);
+                setRefreshing(false);//stop refresh
+                //handle network error
+                if(error.message == 'Error') props.navigation.navigate('Login');//should show error instead
+                else alert('Network Error')
+               
+            });
+           
+        } else {
+            setRefreshing(false);
+            return //props.navigation.navigate('Login')
         }
-        //join
-        formBody = formBody.join("&");
-
-        //request options
-        var requestOptions = {
-            method: 'POST',
-            headers: myHeaders,
-            body: formBody,
-            redirect: 'follow'
-        };
-
-        return fetch(TOKEN_ENDPOINT, requestOptions)
     }
 
     retrieveData(storeKey, false)
@@ -121,7 +123,12 @@ const TransactionsScreen = (props) => {
                 />
             </Table>
 
-            <ScrollView>
+            <ScrollView refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={fetchAndStoreTransactions}
+                />
+            }>
                 <Table borderStyle={{ borderWidth: 1, borderColor: '#C1C0B9' }}>
                     {
                         tableData.map((rowData, idx) => (

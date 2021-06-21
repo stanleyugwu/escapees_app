@@ -37,6 +37,7 @@
     "react-native-screens": "~3.0.0",
     "react-native-settings": "^0.2.3",
     "react-native-switch": "^2.0.0",
+    "react-native-table-component": "^1.2.1",
     "react-native-web": "~0.13.12",
     "styled-components": "^5.2.3",
     "unimodules-permissions-interface": "^6.1.0"

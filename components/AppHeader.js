@@ -11,7 +11,7 @@ import { TouchableOpacity } from 'react-native';
 const AppHeader = (props) => {
 
     //props destructure
-    const {viewingStations, dataLoaded} = props;
+    const {viewingStations, dataLoaded, showViewStatusBar} = props;
     
     //station in view
     const stationInView = viewingStations == 1 ? 'Diesel Fuel' : 'Gas';
@@ -25,37 +25,29 @@ const AppHeader = (props) => {
                     style={{backgroundColor:'#fff'}}
                     iosBarStyle="light-content"
                     noShadow={true}
-                    androidStatusBarColor={viewingStations == 1 ? '#090' : 'red'}
+                    androidStatusBarColor={showViewStatusBar ? viewingStations == 1 ? '#090' : 'red' : 'black'}
                 >
-                    {/* <Left style={{maxWidth:'15%',paddingTop:11}}>
-                        {
-                            //only show arrow on stations-list-view
-                            stationsDisplayView == 2 ? (
-                                <Button transparent style={{padding:0}}>
-                                    <TouchableOpacity onPress={e => setStationsDisplayView(1)} >
-                                        <Icon name="arrow-back-ios" size={38} color="#555"/>
-                                    </TouchableOpacity>
-                                </Button>
-                            ) : null
-                        }
-                    </Left> */}
                     <Body>
                         <Thumbnail large source={logo} square resizeMode="contain" style={{width:'100%',height:'100%'}}/>
                     </Body>
                 </Header>
 
                 {/* Viewing Stations status bar */}
-                <View style={{backgroundColor: viewingStations == 1 ? '#090' : 'red'}}>
-                    <Text style={{color:'white',textAlign:'center'}}>
-                        {
-                            dataLoaded ? `Currently Viewing ${stationInView} Prices`  : 'Loading...'
-                        }
-                    </Text>
-                </View>
+                {
+                    showViewStatusBar ? (
+                    <View style={{backgroundColor: viewingStations == 1 ? '#090' : 'red'}}>
+                        <Text style={{color:'white',textAlign:'center'}}>
+                            {
+                                dataLoaded ? `Currently Viewing ${stationInView} Prices`  : 'Loading...'
+                            }
+                        </Text>
+                    </View>
+                    ) : null
+                }
             </View>
         
         )
-    }, [viewingStations,dataLoaded]);//re-render determinants
+    }, [viewingStations,dataLoaded, showViewStatusBar]);//re-render determinants
 
 };
 
