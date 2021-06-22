@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Root, Container, Content, Footer, Icon, Grid, Col, Row, View, Text, Button, Title } from 'native-base';
-import { Alert, ScrollView, StyleSheet, TouchableHighlight, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
+import { Root, Container, Content, Footer, Icon, View, Text, Grid, Row } from 'native-base';
+import { ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
@@ -19,16 +19,13 @@ const TransactionsScreen = (props) => {
     //transactions data mock
     const [transactions, setTransactions] = useState(null);
 
-    //data refresh state
-    const [refreshing, setRefreshing] = useState(false);
-
     const storeKey = 'eskp_pv_transactions';//transactions store key
 
 
     //fetch transactions data with refresh token
     const fetchAndStoreTransactions = async () => {
-
-        setRefreshing(true);//table refreshing data
+        console.log('loading transact')
+        // setRefreshing(true);//table refreshing data
 
         let dataStoreKey = 'eskp_pv_data';
 
@@ -47,46 +44,43 @@ const TransactionsScreen = (props) => {
                     return tokens['access_token'];
                 } else throw Error('Error')
             })
-            .then(accessToken => {
-                /**
-                 * ERROR BELOW
-                 */
+            .then(async accessToken => {
+                
                 //fetch transactions
-                getTransactions(accessToken)
-                .then(res => {
-                    console.log(res.ok);//this is false
-                })
-                .catch(e => {
-                    console.log('error',e)
-                })
+                let result = await getTransactions(accessToken);
 
-                // if(result instanceof Array){
-                //     //load transactions
-                //     setTransactions(result);
-                //     setRefreshing(false);
+                if(result instanceof Array){
+                    //load transactions
+                    setTransactions(result);
 
-                //     //store data
-                //     let stored = storeData(storeKey,result,false);
-                //     if(!stored) alert('error storing transactions data')
-                // }
-                // else if (result == false) throw Error('Error');//request error
-                // else throw Error();//network error
+                    //store data
+                    let stored = storeData(storeKey,result,false);
+                    if(!stored) alert('error storing transactions data')
+                }
+                else if (result == false) throw Error('Error');//request error
+                else throw Error();//network internet error
 
             })
             .catch(error => {
-                setRefreshing(false);//stop refresh
-                //handle network error
-                if(error.message == 'Error') props.navigation.navigate('Login');//should show error instead
-                else alert('Network Error')
-               
+                //show error only when theres no data already rendered
+                if(transactions == null){
+                    if(error.message == 'Error') setTransactions(`Couldn't Fetch Data, please try again`);//server error
+                    else setTransactions(`Failed, Check Your Internet Connection And Try Again`);//internet error
+                }else {
+                    //theres data alert
+                    Alert.alert(
+                        'Error!!',
+                        error.message == 'Error' ? `Couldn't Fetch Data, please try again` : `Failed, Check Your Internet Connection And Try Again`
+                    )
+                }
             });
            
         } else {
-            setRefreshing(false);
-            return //props.navigation.navigate('Login')
+            return props.navigation.navigate('Login')
         }
     }
 
+    //try get stored transactions
     retrieveData(storeKey, false)
     .then(data => {
         if (data == null) return fetchAndStoreTransactions()
@@ -111,6 +105,16 @@ const TransactionsScreen = (props) => {
         ]
     });
 
+    //Error Warning Text
+    const ErrorText = (text) => (
+        <Text style={styles.ErrorWrapper}>
+            <Grid style={styles.ErrorInner}>
+                <Row><Text style={styles.RefreshText}>{text}</Text></Row>
+                <Row><Text style={styles.RefreshText}>Pull to refresh...</Text></Row>
+            </Grid>
+        </Text>
+    )
+
     //transactions table
     const TransactionsTable = () => (
         <View style={styles.Container}>
@@ -125,23 +129,31 @@ const TransactionsScreen = (props) => {
 
             <ScrollView refreshControl={
                 <RefreshControl
-                    refreshing={refreshing}
+                    refreshing={transactions == null ? true : false}
                     onRefresh={fetchAndStoreTransactions}
                 />
             }>
                 <Table borderStyle={{ borderWidth: 1, borderColor: '#C1C0B9' }}>
                     {
-                        tableData.map((rowData, idx) => (
-                            <TableRow
-                                key={idx}
-                                data={rowData}
-                                widthArr={widthArr}
-                                style={[styles.row, idx % 2 && { backgroundColor: '#f1faff' }]}
-                                textStyle={styles.text}
-                            />
-                        ))
+                        transactions == null /*loading*/ ? (
+                            <Text>Loading...</Text>
+                            // <FetchLoader loadingText="Loading Transactions..."/>
+                        ) : (transactions instanceof Array && transactions.length) /*Filled Data */ ? (
+                            tableData.map((rowData, idx) => (
+                                <TableRow
+                                    key={idx}
+                                    data={rowData}
+                                    widthArr={widthArr}
+                                    style={[styles.row, idx % 2 && { backgroundColor: '#f1faff' }]}
+                                    textStyle={styles.text}
+                                />
+                            ))
+                        ) : (transactions instanceof Array && !(transactions.length)) ?  (
+                            ErrorText('No Transactions Yet')//empty data
+                        ) : ErrorText(transactions)/*Fetch Error */ 
                     }
                 </Table>
+                
             </ScrollView>
         </View>
     )
@@ -171,15 +183,7 @@ const TransactionsScreen = (props) => {
                     </TouchableOpacity>
 
                     <ScrollView horizontal={true} scrollEnabled={true}>
-                        {
-                            transactions == null ? (
-                                <FetchLoader loadingText={"Loading Transactions..."} />
-                            ) : (transactions == []) ? (
-                                <Title>
-                                    NO TRANSACTIONS
-                                </Title>
-                            ) : (TransactionsTable())
-                        }
+                        {TransactionsTable()}
                     </ScrollView>
                 </Content>
                 <Footer style={styles.Footer}>
@@ -210,6 +214,19 @@ const styles = StyleSheet.create({
         fontWeight: '100',
         fontFamily: 'Roboto_medium',
         color: '#222'
+    },
+    ErrorWrapper:{
+        height:200,
+        textAlignVertical:'center',
+        textAlign:'center',
+    },
+    ErrorInner:{
+        borderColor:'red',
+        alignItems:'center',
+        alignSelf:'center',
+    },
+    RefreshText:{
+        fontFamily:'Roboto_medium'
     },
     Footer: {
         backgroundColor: 'white',
