@@ -15,10 +15,12 @@ const getTransactions = async (accessToken) => {
 
     await fetch(TOKEN_ENDPOINT, requestOptions)
     .then(res => {
+        if (!mountedRef.current) return null
         if(res.ok) return res.json()
         else throw Error('error')
     })
     .then(transactions => {
+        if (!mountedRef.current) return null
         if(transactions && transactions instanceof Array) result = transactions
         else throw Error('error')
     })
@@ -27,6 +29,15 @@ const getTransactions = async (accessToken) => {
         else result = null//network error
     });
 
+    useEffect(() => {
+        if (immediate) {
+          execute(funcParams)
+        }
+        return () => {
+          mountedRef.current = false
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [])
     return result
 }
 
