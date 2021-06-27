@@ -10,6 +10,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import SplashScreen from './screens/SplashScreen';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
+import PreferenceScreen from './screens/PreferenceScreen';
+import TransactionsScreen from './screens/TransactionsScreen';
 
 //Load Fonts/Icons
 import * as Font from 'expo-font';
@@ -53,6 +55,8 @@ class App extends React.Component{
                     <Stack.Screen name="Splash" component={SplashScreen} />
                     <Stack.Screen name="Login" component={LoginScreen}/>
                     <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="Preferences" component={PreferenceScreen}/>
+                    <Stack.Screen name="Transactions" component={TransactionsScreen}/>
                 </Stack.Navigator>
             </NavigationContainer>
         )

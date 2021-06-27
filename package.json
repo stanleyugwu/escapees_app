@@ -8,6 +8,7 @@
     "eject": "expo eject"
   },
   "dependencies": {
+    "@babel/runtime": "^7.14.6",
     "@react-native-async-storage/async-storage": "^1.13.0",
     "@react-native-community/geolocation": "^2.0.2",
     "@react-native-community/masked-view": "0.1.10",
@@ -37,12 +38,16 @@
     "react-native-screens": "~3.0.0",
     "react-native-settings": "^0.2.3",
     "react-native-switch": "^2.0.0",
+    "react-native-table-component": "^1.2.1",
     "react-native-web": "~0.13.12",
     "styled-components": "^5.2.3",
     "unimodules-permissions-interface": "^6.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.9.0"
+  },
+  "resolutions": {
+    "**/@babel/runtime": "7.5.0"
   },
   "private": true
 }

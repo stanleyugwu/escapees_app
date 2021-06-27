@@ -54,7 +54,7 @@ const ListView = (props) => {
     
     //loop through stations data and add distanceFromUser prop to each station
     let stationsData = stationLocationsData.map((station) => {
-        if(!userPosition || !('latitude' in userPosition)){
+        if(userPosition == false || userPosition == 'true'){
             station.distanceFromUser = false;
             return station
         }

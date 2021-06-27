@@ -10,9 +10,6 @@ const CustomCalloutView = (props) => {
     //shorthand
     const s = props.stationData || {};
 
-    //shorthand for viewType i.e where the callout is used (Map = 1, Second-Screen = 2)
-    const viewType = props.viewType;
-
     //seperate cents change (to be superscripted) from whole retail price
     let regularPrice = s.regularPrice.toString();
     let regularPriceWhole = regularPrice;
@@ -82,7 +79,7 @@ const CustomCalloutView = (props) => {
                                     <Grid>
                                         {
                                             //split address into multi-lines to avoid overflow
-                                            s.address2.match(/.{1,15}/g).map((chunk, idx) => {
+                                            s.address2 && s.address2.match(/.{1,15}/g).map((chunk, idx) => {
                                                 return (
                                                     <Row key={idx}>
                                                         <Text fontWeight="bold" fontSize={12}>{chunk}</Text>
@@ -149,10 +146,7 @@ const CustomCalloutView = (props) => {
                     </MoneySaved>
                 </Col2>
             </Callout>
-            {
-                //show only on Map view
-                viewType == 1 ? <Arrow/> : null
-            }
+            <Arrow/>
         </CalloutWrapper>
     )
 }

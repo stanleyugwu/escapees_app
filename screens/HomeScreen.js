@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Root, Container, Content, Footer, Icon, Grid, Col, Row, View,} from 'native-base';
-import { Alert,StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { Root, Container, Content, Footer, Icon, Grid, Col, Row, View, Text} from 'native-base';
+import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
 //components import
 import AppHeader from '../components/AppHeader';
@@ -21,28 +21,24 @@ import { MaterialIcons } from "@expo/vector-icons";
 //MAIN VIEWS WRAPPER
 import MainViewsWrapper from '../components/MainViews/index';
 
-//storage helper packages
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {encrypt, decrypt} from '../utils/cryptor';
+//data storage and retrieval utils
+import {storeData, retrieveData} from '../utils/localDataAdapters';
 
 const HomeScreen = (props) => {
 
     //currently showing station type (1 = diesel, 2 = gas)
     const [viewingStations, setViewingStations] = useState(1);
 
-    //currently showing stations display type (1 = MapView, 2 = ListView)
+    //currently showing stations display type (1 = MapView, 2 = ListView )
     const [stationsDisplayView, setStationsDisplayView] = useState(1);
 
-    //track data fetch progress (null = 'loading', true = 'loaded', false = 'encountered error')
-    const [dataLoaded, setDataLoaded] = useState(null);//default is loading
-
-    //resource data
-    const [stationLocationsData, setStationLocationsData] = useState([]);
+    //resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
+    const [stationLocationsData, setStationLocationsData] = useState(null);
 
     //stations extract based on stations in view
-    const stationsInView = stationLocationsData.filter((station) => {
+    const stationsInView = stationLocationsData ? stationLocationsData.filter((station) => {
         return true//station.locationId == viewingStations
-    });
+    }) : [];
 
     //prevent going back to splash screen
     props.navigation.addListener('beforeRemove', e => e.preventDefault());
@@ -53,49 +49,19 @@ const HomeScreen = (props) => {
     //user current latLng position
     const [userPosition, setUserPosition] = useState(null);
 
+    //slide up menu state (1 = visible, 0 = hidden)
+    const [slideUpMenuVisible, setSlideUpMenuVisibile] = useState(0);
+
     //secure-store-api availability
-    const {dataAvailable, passedTokens} = props.route.params;//passed params
-
-    // data store key
-    var storeKey = 'eskp_pv_data';
-
-    //data retriever
-    async function retrieveData() {
-        try {   
-        const data = await AsyncStorage.getItem(storeKey);
-        if (data !== null && data.length > 0) {
-            //decrypt data and parse it twice. parsing once doesn't work
-            let decrypted = JSON.parse(decrypt(data));
-            return decrypted
-        }else return false
-    
-        } catch (error) {
-            // There was an error on the native side
-            return false
-        }
-    }
-
-    //data persistor
-    async function storeData(data) {
-        try {
-            await AsyncStorage.setItem(
-                storeKey,
-                encrypt(JSON.stringify(data))
-            );
-            //data stored
-        } catch (error) {
-            // There was an error on the native side
-            Alert.alert(
-                "Couldn't save stations data",
-                error.message
-            )
-        }
-    }
-    
+    const {dataAvailable, passedToken, login} = props.route.params;//passed params
 
     //online data fetch
-    const fetchData = (token) => {
-        getAllStationLocations(token['access_token'])
+    const fetchData = (token, username, password) => {
+
+        // data store key
+        var storeKey = 'eskp_pv_data';
+
+        getAllStationLocations(token)
         .then(res => {
             if(res.ok) return res.json()
             else throw Error(false);//server error
@@ -104,40 +70,63 @@ const HomeScreen = (props) => {
             //data fetched
             //data validity checks
             if(stationsData && stationsData instanceof Array){
-                setStationLocationsData(stationsData.slice(0,500));
-                setDataLoaded(true);
+                setStationLocationsData(stationsData.slice(0,50));
 
                 //persist data
-                storeData({
-                    token,
+                let stored = storeData(storeKey,{
+                    'login':{
+                        'usernameOrEmail':username,
+                        'password':password
+                    },
                     stationsData
-                });
+                },true);
+
+                stationsData = null;//clear memory
+
+                if(!stored) throw Error('native side error');//error while storing
 
             }else throw Error(false);//server error
         })
         .catch(error => {
             if(error.message == false) return props.navigation.navigate('Login');//server error
-            else dataLoaded != false && setDataLoaded(false);//network error
+            else if(error.message == 'native side error') return props.navigation.navigate('Login')
+            else stationLocationsData != false && setStationLocationsData(false);//network error
         })
     }
 
     //data loader
     const loadData = async () => {
-        setDataLoaded(null);//show loader
+
+        var storeKey = 'eskp_pv_data';//data store key
+        // setDataLoaded(null);//show loader
 
         if(dataAvailable){
             //user logged in before, and data was fetched
-            let data = await retrieveData();
+            let data = await retrieveData(storeKey,true);
+
             //data validity checks
-            if(data && typeof data == 'object' && 'stationsData' in data && 'token' in data){
-                setStationLocationsData(data['stationsData'].slice(0,500));
-                setDataLoaded(true);
+            if(
+                data && typeof data == 'object' &&
+                'stationsData' in data && 
+                data['stationsData'] &&
+                'login' in data
+            ){
+                setStationLocationsData(data['stationsData'].slice(0,50));
+                data = null;//clear memory
+                // setDataLoaded(true);
                 return
             }else return props.navigation.navigate('Login');//invalid credentials
 
-        }else if(!dataAvailable && passedTokens && 'access_token' in passedTokens){
+        }else if(
+            !dataAvailable &&
+            passedToken && 
+            !!login && 
+            'usernameOrEmail' in login && 
+            'password' in login
+        ){
+
             //no data but token was passed, (get data online)
-            return fetchData(passedTokens);
+            return fetchData(passedToken,login['usernameOrEmail'],login['password']);
         }else {
             //no stored data or token to fetch it
             return props.navigation.navigate('Login')
@@ -153,17 +142,16 @@ const HomeScreen = (props) => {
         <Root>
             <Container>
                 <AppHeader
-                    stationsDisplayView={stationsDisplayView}
                     viewingStations={viewingStations}
-                    setStationsDisplayView={setStationsDisplayView}
-                    dataLoaded={dataLoaded}
+                    dataLoaded={!stationLocationsData ? false : true}
+                    showViewStatusBar={true}
                 />
 
                 <Content contentContainerStyle={{flex:1,}}>
                     <View style={{flex:1,backgroundColor:'transparent'}}>
                         {
-                            //true == 'loaded'
-                            dataLoaded == true ? (
+                            //data exists and not empty array
+                            stationLocationsData && stationLocationsData.length ? (
                                 <MainViewsWrapper
                                     setStationsDisplayView={setStationsDisplayView} 
                                     stationsInView={stationsInView}
@@ -178,68 +166,151 @@ const HomeScreen = (props) => {
 
                         {
                             //null == 'loading'
-                            dataLoaded == null ? (
+                            stationLocationsData == null ? (
                                 <FetchLoader/>
                             ) : null
                         }{/* RESOURCE LOAD INDICATOR */}
                             
                         {
                             //false == 'load failed'
-                            dataLoaded == false ? (
+                            stationLocationsData == false ? (
                                 <FetchError retry={loadData}/>
                             ) : null
                         }{/* RESOURCE LOAD ERROR */}
-                        
                     </View>
+
+                    <Grid
+                        style={{
+                            backgroundColor:'white',
+                            width:'100%',
+                            display:slideUpMenuVisible ? 'flex' : 'none'
+                        }}
+                    >
+                        <Row style={{maxHeight:30}}>
+                            <TouchableOpacity
+                                style={{backgroundColor:'#606060',width:'100%',...styles.Center}}
+                                onPress={() => setSlideUpMenuVisibile(0)}
+                            >
+                                <Icon name="chevron-thin-down" type="Entypo" style={{color:'white',fontWeight:'700'}}/>
+                            </TouchableOpacity>
+                        </Row>
+                        {/* Close button */}
+
+                        <Row style={styles.RowStyle}>
+                            <TouchableOpacity
+                                style={styles.MenuItemTouchable}
+                                onPress={() => props.navigation.navigate('Preferences')}
+                            >
+                                <Col size={33} style={styles.MenuItemIconWrapper}>
+                                    <Icon name="star-sharp" type="Ionicons"/>
+                                </Col>
+                                <Col size={67} style={styles.MenuItemTextWrapper}>
+                                    <Text style={styles.MenuItemText}>Preferences</Text>
+                                </Col>
+                            </TouchableOpacity>
+                        </Row>
+                        {/* menu items (preferences)*/}
+
+                        <Row style={styles.RowStyle}>
+                            <TouchableOpacity
+                                style={styles.MenuItemTouchable}
+                                onPress={() => props.navigation.navigate('Transactions')}
+                            >
+                                <Col size={33} style={styles.MenuItemIconWrapper}>
+                                    <Icon name="receipt" type="MaterialCommunityIcons"/>
+                                </Col>
+                                <Col size={67} style={styles.MenuItemTextWrapper}>
+                                    <Text style={styles.MenuItemText}>Transaction History</Text>
+                                </Col>
+                            </TouchableOpacity>
+                        </Row>
+                        {/* menu items (transaction history)*/}
+
+                        <Row style={styles.RowStyle}>
+                            <TouchableOpacity style={styles.MenuItemTouchable}>
+                                <Col size={33} style={styles.MenuItemIconWrapper}>
+                                    <Icon name="account-circle" type="MaterialIcons"/>
+                                </Col>
+                                <Col size={67} style={styles.MenuItemTextWrapper}>
+                                    <Text style={styles.MenuItemText}>Account Info</Text>
+                                </Col>
+                            </TouchableOpacity>
+                        </Row>
+                        {/* menu items (Account Info)*/}
+
+                        <Row style={styles.RowStyle}>
+                            <TouchableOpacity style={styles.MenuItemTouchable}>
+                                <Col size={33} style={styles.MenuItemIconWrapper}>
+                                    <Icon name="help" type="MaterialIcons"/>
+                                </Col>
+                                <Col size={67} style={styles.MenuItemTextWrapper}>
+                                    <Text style={styles.MenuItemText}>Help and Instructions</Text>
+                                </Col>
+                            </TouchableOpacity>
+                        </Row>
+                        {/* menu items (Help and Instruction)*/}
+                    </Grid>
+                    {/* Slide Menu */}
                 </Content>
 
-                {
-                    stationsDisplayView == 1 && dataLoaded ? (
-                        <TouchableOpacity style={{...styles.FloatingMenu,}} onPress={e => setStationsDisplayView(2)}>
-                            <MaterialIcons name="toc" size={35} />
-                        </TouchableOpacity>
-                    ) : null
-                }
-                {/* Floating Hamburger Menu for switching views */}
-                
+                <Footer style={{height:75, backgroundColor:'white'}}>
+                    <Grid style={{position:'relative',width:'100%'}}>
+                        <Row size={38}>
+                            <TouchableHighlight
+                                onPress={() => setStationsDisplayView(stationsDisplayView == 1 ? 2 : 1)}
+                                style={{
+                                    backgroundColor:'#3597e2',
+                                    width:'100%',
+                                    display:stationLocationsData && stationLocationsData.length ? 'flex' : 'none',
+                                    ...styles.Center
+                                }}
+                            >
+                                <Text style={{color:'white',fontWeight:'700'}}>
+                                    {
+                                        stationsDisplayView == 1 ? 'List View' : 'Map View'
+                                    }
+                                </Text>
+                            </TouchableHighlight>
+                        </Row>
+                        {/* Views Toggler */}
 
-                <Footer style={{ backgroundColor: '#fff',borderWidth:1, height:50}}>
-                    <Grid style={styles.Center}>
-                        <Col style={styles.Center} size={35}>
-                            {
-                                dataLoaded ? (
-                                    <StationSwitch viewingStations={viewingStations} setViewingStations={setViewingStations}/>
-                                ) : null
-                            }
-                        </Col>
+                        <Row size={62}>
+                            <Col style={styles.Center} size={35}>
+                                {
+                                    stationLocationsData && stationLocationsData.length ? (
+                                        <StationSwitch viewingStations={viewingStations} setViewingStations={setViewingStations}/>
+                                    ) : null
+                                }
+                            </Col>
 
-                        <Col size={35} style={styles.Center}>
-                            {
-                                stationsDisplayView == 2 && dataLoaded ? (
-                                    <SortSwitch
-                                        sortingParameter={sortingParameter}
-                                        setSortingParameter={setSortingParameter}
-                                        //disable sort toggle if no user position 
-                                        notToggleable={!userPosition ? true : false}
-                                    />
-                                ) : null
-                            }
-                        </Col>
+                            <Col size={35} style={styles.Center}>
+                                {
+                                    stationsDisplayView == 2 && (stationLocationsData && stationLocationsData.length) ? (
+                                        <SortSwitch
+                                            sortingParameter={sortingParameter}
+                                            setSortingParameter={setSortingParameter}
+                                            //disable sort toggle if no user position 
+                                            notToggleable={userPosition == false || userPosition == 'true' ? true : false}
+                                        />
+                                    ) : null
+                                }
+                            </Col>
 
-                        <Col style={styles.Center} size={30}>
-                            <Row>
-                                <Col style={{...styles.Center,paddingLeft:5}}>
-                                    <TouchableOpacity>
-                                        <Icon name="filter"/*funnel*/ type="AntDesign" />
-                                    </TouchableOpacity>
-                                </Col>
-                                <Col style={{alignItems:'flex-start',justifyContent:'space-around',paddingLeft:5}}>
-                                    <TouchableOpacity>
-                                        <Icon name="help-circle-outline"/>
-                                    </TouchableOpacity>
-                                </Col>
-                            </Row>
-                        </Col>
+                            <Col style={styles.Center} size={30}>
+                                <Row>
+                                    <Col style={{...styles.Center,paddingLeft:3}}>
+                                        <TouchableOpacity>
+                                            <Icon name="filter"/*funnel*/ type="AntDesign" />
+                                        </TouchableOpacity>
+                                    </Col>
+                                    <Col style={{alignItems:'flex-start',justifyContent:'space-around',paddingLeft:5}}>
+                                        <TouchableOpacity onPress={() => setSlideUpMenuVisibile(slideUpMenuVisible ? 0 : 1)}>
+                                            <Icon name="menu" type="Entypo" style={{fontSize:38, color:'#444'}}/>
+                                        </TouchableOpacity>
+                                    </Col>
+                                </Row>
+                            </Col>
+                        </Row>                                      
                     </Grid>
                 </Footer>
             </Container>
@@ -252,16 +323,26 @@ const styles = StyleSheet.create({
         alignItems:'center',
         justifyContent:'center'
     },
-    FloatingMenu:{
-        backgroundColor:'white',
-        elevation:8,
-        borderWidth:1,
-        borderColor:'#999',
-        padding:7,
-        borderRadius:10,
-        position:'absolute',
-        bottom:80,
-        right:30,
+    RowStyle:{
+        borderBottomWidth:1,
+        borderBottomColor:'#999'
+    },
+    MenuItemTouchable:{
+        width:'100%',
+        flexDirection:'row',
+        alignItems:'center',
+        justifyContent:'center'
+    },
+    MenuItemIconWrapper:{
+        alignItems:'flex-end',
+        marginRight:20
+    },
+    MenuItemTextWrapper:{
+        alignItems:'flex-start'
+    },
+    MenuItemText:{
+        color:'#323232',
+        fontFamily:'Roboto_medium'
     }
 })
 

@@ -58,7 +58,10 @@ const LoginScreen = (props) => {
         })
         .then(tokens => {
             if(tokens && "access_token" in tokens){
-                return props.navigation.navigate('Home',{passedTokens:tokens})
+                return props.navigation.navigate(
+                    'Home',
+                    {passedToken:tokens['access_token'], login:{usernameOrEmail:usernameEmail,password}}
+                )
             }else{
                 throw Error('Invalid Response')
             }
@@ -68,7 +71,7 @@ const LoginScreen = (props) => {
             if(error.message.indexOf('Network request failed') > -1) error.message = `You're not connected to internet`
             setLoggingIn(false);
             setErrorText(error.message)
-        })
+        });
 
     }
 

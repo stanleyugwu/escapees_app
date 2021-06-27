@@ -139,7 +139,7 @@ const AppMapView = (props) => {
                                 </TouchableOpacity>
                             </Col>
                             <Col size={12}>
-                                <TouchableOpacity onPress={e => {setUserPosition(true)}}>
+                                <TouchableOpacity onPress={e => {setUserPosition('true')}}>
                                     <Icon name="close"/>
                                 </TouchableOpacity>
                             </Col>
