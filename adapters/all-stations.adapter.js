@@ -2,14 +2,13 @@ import Constants from 'expo-constants';
 
 const stationsDataEndpoint = Constants.manifest.extra.stations_data_endpoint;
 
-const getAllStationLocations = async (token) => {
-    
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${token}`);
+const getAllStationLocations = (token) => {
 
     var requestOptions = {
     method: 'GET',
-    headers: myHeaders,
+    headers: {
+        "Authorization": `Bearer ${token}`
+    },
     redirect: 'follow'
     };
 
