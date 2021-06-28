@@ -2,7 +2,7 @@
   "expo": {
     "name": "Escapees App",
     "slug": "EscapeesApp",
-    "version": "1.0.0",
+    "version": "1.0.7",
     "entryPoint": "./index.js",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,11 +19,14 @@
       "**/*"
     ],
     "ios": {
-      "buildNumber": "1.0.0",
+      "buildNumber": "1.0.7",
       "supportsTablet": true,
       "bundleIdentifier": "com.escapees.fuelapp",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription":"This App uses your location to show you nearby gas/deisel stations",
+        "NSLocationWhenInUseUsageDescription":"This App uses your location to show you nearby gas/deisel stations"
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyA9rK5lTKqEFTnPVFVtdRYgTI7KcsUvAA4"
       }
     },
     "web": {
