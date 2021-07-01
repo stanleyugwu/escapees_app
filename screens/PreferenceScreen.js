@@ -20,13 +20,15 @@ import RadioButton from "../components/RadioButton";
 import { storeData, retrieveData } from "../utils/localDataAdapters";
 
 const PreferencesScreen = (props) => {
-  //fuel type display preference
+  //fuel type display preference (1 = diesel, 2 = gasoline, 3 = both)
   const [fuelTypePreference, setFuelTypePreference] = useState("gasAndDiesel");
   //fuel price display preference
   const [fuelPricePreference, setFuelPricePreference] = useState("midgrade");
   //fuel unit preference
   const [fuelUnitPreference, setFuelUnitPreference] =
     useState("pricePerGallon");
+
+  const [preferenceChanged, setPreferenceChanged] = useState(false); //changed preference state
 
   const storeKey = "eskp_pv_preferences"; //preferences store key
 
@@ -39,6 +41,8 @@ const PreferencesScreen = (props) => {
         fuelPrice = "midgrade",
         fuelUnit = "pricePerGallon",
       } = preferences;
+
+      if (!props.navigation.isFocused()) return; //break function if not on screen not focused
 
       //populate state with loaded preferences
       fuelType != fuelTypePreference && setFuelTypePreference(fuelType);
@@ -69,14 +73,11 @@ const PreferencesScreen = (props) => {
         "Preferences Not Saved",
         `Your preferences couldn't be stored`
       );
-    props.navigation.navigate("Home", {
-      fuelTypePreference:
-        fuelTypePreference == "gasoline"
-          ? 0
-          : fuelTypePreference == "diesel"
-          ? 1
-          : 2,
-    }); //exit to home
+
+    props.navigation.isFocused() &&
+      props.navigation.navigate("Home", {
+        hasNewPreference: preferenceChanged,
+      }); //exit to home
   };
 
   //back press handler
@@ -93,8 +94,13 @@ const PreferencesScreen = (props) => {
     const load = async () => {
       await _loadPreferences();
     };
-    load();
+    props.navigation.isFocused() && load();
   }, []);
+
+  //track preference change
+  useEffect(() => {
+    setPreferenceChanged(true);
+  }, [fuelTypePreference, fuelPricePreference, fuelUnitPreference]);
 
   return (
     <Root>

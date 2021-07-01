@@ -9,8 +9,8 @@ import { retrieveData } from "../utils/localDataAdapters";
 import { LogBox } from "react-native";
 
 const StationSwitch = (props) => {
-  //fuel type display preference (0 = gasoline, 1 = diesel, 2 = gasAndDiesel)
-  const [displayPreference, setDisplayPreference] = useState(2);
+  //fuel type display preference (1 = diesel, 2 = gasoline, 3 = gasAndDiesel)
+  const [displayPreference, setDisplayPreference] = useState(3);
 
   //props destructure
   const {
@@ -19,37 +19,27 @@ const StationSwitch = (props) => {
     fuelTypePreference,
     screenFocused,
   } = props;
+
   fuelTypePreference != undefined &&
     displayPreference != fuelTypePreference &&
+    screenFocused &&
     setDisplayPreference(fuelTypePreference);
 
-  const loadPreference = async () => {
-    let storeKey = "eskp_pv_preferences";
-    let preference = await retrieveData(storeKey, false);
-    if (preference) {
-      let { fuelType } = preference;
-      screenFocused &&
-        setDisplayPreference(
-          fuelType == "gasoline" ? 0 : fuelType == "diesel" ? 1 : 2
-        );
-    }
-  };
-
   useEffect(() => {
-    fuelTypePreference == undefined && loadPreference();
+    // fuelTypePreference == undefined && loadPreference();
   }, []);
 
   //Disable the Animation warning to set native driver
   //Switch dependency didn't set it
   LogBox.ignoreLogs(["Animated: `useNativeDriver`"]);
 
-  return displayPreference == 0 ? (
-    <Badge danger style={{ marginLeft: 10 }}>
-      <Text style={{ fontWeight: "700" }}>Gas</Text>
-    </Badge>
-  ) : displayPreference == 1 ? (
+  return displayPreference == 1 ? (
     <Badge success style={{ marginLeft: 10 }}>
       <Text style={{ fontWeight: "700" }}>Diesel</Text>
+    </Badge>
+  ) : displayPreference == 2 ? (
+    <Badge danger style={{ marginLeft: 10 }}>
+      <Text style={{ fontWeight: "700" }}>Gasoline</Text>
     </Badge>
   ) : (
     <Switch

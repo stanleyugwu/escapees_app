@@ -45,12 +45,23 @@ const HomeScreen = (props) => {
   //resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
   const [stationLocationsData, setStationLocationsData] = useState(null);
 
+  //seperate gas and diesel from data set (0 = diesel, 1 = gas)
+  if (stationLocationsData) {
+    var dieselStations = stationLocationsData.filter(
+        (station) => station.fuelTypeId == 0
+      ),
+      gasStations = stationLocationsData.filter(
+        (station) => station.fuelTypeId == 1
+      );
+  }
+
+  //fuel display type preference (1 = diesel, 2 = gasoline, 3 = gasoline&diesel)
+  const [fuelTypePreference, setFuelTypePreference] = useState(
+    3 /**gasoline&diesel */
+  );
+
   //stations extract based on stations in view
-  const stationsInView = stationLocationsData
-    ? stationLocationsData.filter((station) => {
-        return true; //station.locationId == viewingStations
-      })
-    : [];
+  const stationsInView = viewingStations == 1 ? dieselStations : gasStations;
 
   //prevent going back to splash screen
   props.navigation.addListener("beforeRemove", (e) => e.preventDefault());
@@ -65,7 +76,7 @@ const HomeScreen = (props) => {
   const [slideUpMenuVisible, setSlideUpMenuVisibile] = useState(0);
 
   //secure-store-api availability
-  const { dataAvailable, passedToken, login, fuelTypePreference } =
+  const { dataAvailable, passedToken, login, hasNewPreference } =
     props.route.params; //passed params
 
   //online data fetch
@@ -152,9 +163,31 @@ const HomeScreen = (props) => {
     }
   };
 
+  const loadPreferences = async () => {
+    let storeKey = "eskp_pv_preferences";
+    let preferences = await retrieveData(storeKey, false);
+
+    if (preferences) {
+      var { fuelType, fuelPrice, fuelUnit } = preferences;
+      let ftp = fuelType == "diesel" ? 1 : fuelType == "gasoline" ? 2 : 3;
+      setFuelTypePreference(ftp);
+
+      //also sync view and data with preference when set
+      if (ftp < 3) {
+        setViewingStations(ftp);
+      }
+    }
+  };
+
+  //reload preference if theres new preference set from preferenceScreen
+  if (hasNewPreference) {
+    loadPreferences();
+  }
+
   //resource loader
   useEffect(() => {
-    loadData(); //isomorphic data loader
+    props.navigation.isFocused() && loadPreferences();
+    loadData(); //isomorphic data loader //load up and sync app with preferences
   }, []);
 
   return (
