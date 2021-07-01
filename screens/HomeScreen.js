@@ -351,8 +351,8 @@ const HomeScreen = (props) => {
 
               <Col size={35} style={styles.Center}>
                 {stationsDisplayView == 2 &&
-                stationLocationsData &&
-                stationLocationsData.length ? (
+                stationsInView &&
+                stationsInView.length ? (
                   <SortSwitch
                     sortingParameter={sortingParameter}
                     setSortingParameter={setSortingParameter}
