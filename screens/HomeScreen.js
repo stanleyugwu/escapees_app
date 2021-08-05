@@ -93,7 +93,7 @@ const HomeScreen = (props) => {
         //data fetched
         //data validity checks
         if (stationsData && stationsData instanceof Array) {
-          setStationLocationsData(stationsData.slice(0, 50));
+          setStationLocationsData(stationsData.slice(0, 10));
 
           //persist data
           let stored = storeData(
@@ -139,7 +139,7 @@ const HomeScreen = (props) => {
         data["stationsData"] &&
         "login" in data
       ) {
-        setStationLocationsData(data["stationsData"].slice(0, 50));
+        setStationLocationsData(data["stationsData"].slice(0, 10));
         data = null; //clear memory
         // setDataLoaded(true);
         return;
