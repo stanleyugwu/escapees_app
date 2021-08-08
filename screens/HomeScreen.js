@@ -36,13 +36,13 @@ import MainViewsWrapper from "../components/MainViews/index";
 import { storeData, retrieveData } from "../utils/localDataAdapters";
 
 const HomeScreen = (props) => {
-  //currently showing station type (1 = diesel, 2 = gas)
+  //=>currently showing station type (1 = diesel, 2 = gas)
   const [viewingStations, setViewingStations] = useState(1);
 
-  //currently showing stations display type (1 = MapView, 2 = ListView )
+  //=>currently showing stations display type (1 = MapView, 2 = ListView )
   const [stationsDisplayView, setStationsDisplayView] = useState(1);
 
-  //resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
+  //=>resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
   const [stationLocationsData, setStationLocationsData] = useState(null);
 
   //seperate gas and diesel from data set (0 = diesel, 1 = gas)
@@ -55,7 +55,7 @@ const HomeScreen = (props) => {
       );
   }
 
-  //fuel display type preference (1 = diesel, 2 = gasoline, 3 = gasoline&diesel)
+  //=>fuel display type preference (1 = diesel, 2 = gasoline, 3 = gasoline&diesel)
   const [fuelTypePreference, setFuelTypePreference] = useState(
     3 /**gasoline&diesel */
   );
@@ -66,10 +66,10 @@ const HomeScreen = (props) => {
   //prevent going back to splash screen
   props.navigation.addListener("beforeRemove", (e) => e.preventDefault());
 
-  //sorting prameter (1 = Price, 2 = Distance)
+  //=>sorting prameter (1 = Price, 2 = Distance)
   const [sortingParameter, setSortingParameter] = useState(1);
 
-  //user current latLng position
+  //=>user current latLng position
   const [userPosition, setUserPosition] = useState(null);
 
   //slide up menu state (1 = visible, 0 = hidden)

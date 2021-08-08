@@ -45,7 +45,9 @@ const SplashScreen = ({ navigation }) => {
 
   //auto navigate to login screen after 1 second of mount
   useEffect(() => {
-    setTimeout(authenticateUser, 1000);
+    // setTimeout(authenticateUser, 1000);
+    
+    navigation.navigate("Login");
     // AsyncStorage.multiRemove([
     //   "eskp_pv_data",
     //   "eskp_pv_preferences",
