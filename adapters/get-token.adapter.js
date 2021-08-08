@@ -1,8 +1,9 @@
 import Constants from 'expo-constants';
+import timeoutRejector from '../utils/timeoutRejector';
 
 const TOKEN_ENDPOINT = Constants.manifest.extra.token_endpoint;
 
-const getToken = (username, password) => {
+const getToken = async (username, password) => {
     if(!TOKEN_ENDPOINT) return 'no endpoint';
 
     //request headers
@@ -39,7 +40,45 @@ const getToken = (username, password) => {
         redirect: 'follow'
     };
 
-    return fetch(TOKEN_ENDPOINT, requestOptions)
+    var errorObj = {
+        error:true,
+        message:'Request Failed!'
+    }
+
+    try {
+        let response = await Promise.race([fetch(TOKEN_ENDPOINT, requestOptions), timeoutRejector(5000)])
+        
+        if(response.ok){
+            let tokens = await response.json();
+            if(tokens && 'access_token' in tokens){
+                return tokens
+            }
+            throw Error('Invalid Response!')
+        }
+        let status = response.status || 400;
+        throw Error(status)
+
+    } catch (e) {
+        if(e == '__REQUEST_TIMEOUT__'){
+            errorObj.message = 'Slow Network, please try again';
+            return errorObj
+        }
+        let error = e.message;
+        
+        if(error.indexOf('Network request failed') > -1){
+            errorObj.message = `You're not connected to internet`;
+            return errorObj
+        }
+        if(error == 400){
+            errorObj.message = 'Bad Request from app, Please try again';
+            return errorObj;
+        }
+        else if(error == 401){
+            errorObj.message = 'Invalid Username/Email or Password';
+            return errorObj
+        }
+        return errorObj
+    }
     
 }
 

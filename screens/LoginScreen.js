@@ -1,10 +1,13 @@
-import React, {useState} from 'react';
-import {Root, Container, Button, Content, Thumbnail, Title,Form, Item, Input, Icon, Card, Spinner} from 'native-base';
+import React, {useEffect, useState} from 'react';
+import {Root, Container, Button, Content, Thumbnail, Title,Form, Item, Input, Icon, Card, Spinner,Col} from 'native-base';
 import styled from 'styled-components';
 import {Grid, Row,} from 'react-native-easy-grid';
+import store, { updateTokens, updateLoginCreds } from '../redux/store';
 
 //app logo
 import logo from '../assets/images/logo.png';
+// import bg from "../assets/images/splash-bg4.jpg";//background image
+
 
 //RN imports
 import { StyleSheet, TouchableOpacity } from 'react-native';
@@ -31,11 +34,12 @@ const LoginScreen = (props) => {
 
     //login details updater
     const updateDetails = (field, text) => {
+        setErrorText('');
         setLoginDetails({...loginDetails,[field]:text});
     }
 
     //form submission handler
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
 
         // destructure details
         const {usernameEmail, password} = loginDetails;
@@ -49,44 +53,39 @@ const LoginScreen = (props) => {
         }
 
         //if valid inputs were entered get token
-        getToken(usernameEmail,password)
-        .then(res => {
-            if(res.ok) return res.json()
-            else if(res.status == 400) throw Error('Bad Request from app, Please try again')
-            else if(res.status == 401) throw Error('Invalid Username/Email or Password');
-            else throw Error('Request Validation Error')
-        })
-        .then(tokens => {
-            if(tokens && "access_token" in tokens){
-                return props.navigation.navigate(
-                    'Home',
-                    {passedToken:tokens['access_token'], login:{usernameOrEmail:usernameEmail,password}}
-                )
-            }else{
-                throw Error('Invalid Response')
-            }
-        })
-        .catch(error => {
-            //handle network error
-            if(error.message.indexOf('Network request failed') > -1) error.message = `You're not connected to internet`
+        let result = await getToken(usernameEmail,password);
+        if(result.error){
             setLoggingIn(false);
-            setErrorText(error.message)
-        });
+            setErrorText(result.message);
+            return
+        }else{
+            let tokens = result;
+            let creds = {usernameOrEmail:usernameEmail,password}
+            store.dispatch(updateTokens(tokens));
+            store.dispatch(updateLoginCreds(creds));
+            return props.navigation.navigate('Home',{passedToken:tokens['access_token'],login:creds})
+        }
 
     }
 
     return (
         <Root>
             <Container>
-                <Content padder contentContainerStyle={{height:'100%'}}>
+                <Content contentContainerStyle={{height:'100%'}}>
+                <Thumbnail
+                    source={null} 
+                    style={{width:'100%',height:'100%',position:'absolute',top:0,bottom:0,}}
+                    resizeMode="cover"
+                    p
+                />
                     <Grid style={{padding:10}}>
-                        <Row size={2}>   
+                        <Row size={2} style={{paddingHorizontal:10}}>   
                             <Thumbnail square source={logo} style={{width:'100%',height:'100%'}} resizeMode="contain"/>
                         </Row>
                         <Row size={1}>
                             <Grid style={styles.Center}>
                                 <Row>
-                                    <Title style={{color:'#444',fontWeight:'bold'}}>User Login</Title>
+                                    <Title style={{color:'#444',fontWeight:'bold'}}>Login</Title>
                                 </Row>
                                 <Row>
                                     <Line color="#090" w="40%" h={3}/>
@@ -128,7 +127,7 @@ const LoginScreen = (props) => {
                                         ) : null
                                     }
                                     <Space size={15} />
-                                    <Button block full last style={{backgroundColor:'#090'}} onPress={handleSubmit} disabled={loggingIn}>
+                                    <Button block full style={{backgroundColor:'#090'}} onPress={handleSubmit} disabled={loggingIn}>
                                         {
                                             loggingIn ? (
                                                 <Spinner size={25} color='white'/>
@@ -137,11 +136,18 @@ const LoginScreen = (props) => {
                                             )
                                         }
                                     </Button>
+                                    <TouchableOpacity >
+                                        <Text bold size={16} color="#090" center pd={[15,0,5]}>Forgot Password?</Text>
+                                    </TouchableOpacity>
                                 </Card>
-                                <TouchableOpacity >
-                                    <Text bold size={16} color="#090" center pd={[15]}>Forgot Password?</Text>
-                                </TouchableOpacity>
                             </Form>
+                        </Row>
+                        <Row>
+                            <Col>
+                                <Button block full last style={{backgroundColor:'#090'}}>
+                                    <Text bold>CHECK PRICES</Text>
+                                </Button>
+                            </Col>
                         </Row>
                     </Grid>
                 </Content>
