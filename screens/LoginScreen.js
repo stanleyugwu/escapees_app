@@ -2,11 +2,11 @@ import React, {useEffect, useState} from 'react';
 import {Root, Container, Button, Content, Thumbnail, Title,Form, Item, Input, Icon, Card, Spinner,Col} from 'native-base';
 import styled from 'styled-components';
 import {Grid, Row,} from 'react-native-easy-grid';
-import store, { updateTokens, updateLoginCreds } from '../redux/store';
+import store, { updateAuthTokens, updateUserLoginDetails, updateUserStatus } from '../redux/store';
 
 //app logo
 import logo from '../assets/images/logo.png';
-// import bg from "../assets/images/splash-bg4.jpg";//background image
+import bg from "../assets/images/bg.jpg";//background image
 
 
 //RN imports
@@ -16,9 +16,6 @@ import { StyleSheet, TouchableOpacity } from 'react-native';
 import getToken from '../adapters/get-token.adapter';
 
 const LoginScreen = (props) => {
-
-    //prevent going back to splash screen
-    props.navigation.addListener('beforeRemove', e => e.preventDefault());
 
     //track when log in in progress
     const [loggingIn, setLoggingIn] = useState(false);
@@ -61,11 +58,11 @@ const LoginScreen = (props) => {
         }else{
             let tokens = result;
             let creds = {usernameOrEmail:usernameEmail,password}
-            store.dispatch(updateTokens(tokens));
-            store.dispatch(updateLoginCreds(creds));
+            store.dispatch(updateUserStatus('member'));
+            store.dispatch(updateAuthTokens(tokens));
+            store.dispatch(updateUserLoginDetails(creds));
             return props.navigation.navigate('Home',{passedToken:tokens['access_token'],login:creds})
         }
-
     }
 
     return (
@@ -73,28 +70,23 @@ const LoginScreen = (props) => {
             <Container>
                 <Content contentContainerStyle={{height:'100%'}}>
                 <Thumbnail
-                    source={null} 
-                    style={{width:'100%',height:'100%',position:'absolute',top:0,bottom:0,}}
-                    resizeMode="cover"
-                    p
+                    source={bg} 
+                    style={{width:'100%',height:'100%',position:'absolute',top:0,bottom:0,opacity:0.4}}
+                    resizeMode="stretch"
                 />
                     <Grid style={{padding:10}}>
                         <Row size={2} style={{paddingHorizontal:10}}>   
                             <Thumbnail square source={logo} style={{width:'100%',height:'100%'}} resizeMode="contain"/>
                         </Row>
                         <Row size={1}>
-                            <Grid style={styles.Center}>
-                                <Row>
-                                    <Title style={{color:'#444',fontWeight:'bold'}}>Login</Title>
-                                </Row>
-                                <Row>
-                                    <Line color="#090" w="40%" h={3}/>
-                                </Row>
-                            </Grid>
+                            <Col style={{alignItems:'center'}}>
+                                <Title style={{color:'#444',fontWeight:'bold',}}>Login</Title>
+                                <Line color="#090" w="40%" h={3} style={{marginTop:10}}/>
+                            </Col>
                         </Row>
                         <Row size={5}>
                             <Form style={{width:'100%'}}>
-                                <Card style={{padding:20,paddingTop:40}}>
+                                <Card style={{padding:20,paddingTop:40,}}>
                                     <Item underline success>
                                         <Icon name="mail" />
                                         <Input
@@ -141,13 +133,6 @@ const LoginScreen = (props) => {
                                     </TouchableOpacity>
                                 </Card>
                             </Form>
-                        </Row>
-                        <Row>
-                            <Col>
-                                <Button block full last style={{backgroundColor:'#090'}}>
-                                    <Text bold>CHECK PRICES</Text>
-                                </Button>
-                            </Col>
                         </Row>
                     </Grid>
                 </Content>

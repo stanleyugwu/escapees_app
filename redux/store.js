@@ -16,8 +16,14 @@ const appSlice = createSlice({
         sortingParameter:1,
         //user current latLng position
         userPosition:null,
-        tokens:null,
-        loginDetails:null
+        userStatus:'guest',
+        userAuthenticated:false,
+        genericLoginDetails:{
+            email:'stanleyugwu2018@gmail.com',
+            password:'66413705'
+        },
+        userLoginDetails:null,
+        authTokens:null,
     },
     reducers:{
         incrementCount: (state) => {
@@ -26,16 +32,30 @@ const appSlice = createSlice({
         decrementCount: (state) => {
             state.count--
         },
-        updateTokens: (state, tokens) => {
-            state.tokens = tokens.payload
+        updateAuthTokens: (state, tokens) => {
+            state.authTokens = tokens.payload
         },
-        updateLoginCreds: (state, creds) => {
-            state.loginDetails = creds.payload
+        updateUserLoginDetails: (state, creds) => {
+            state.userLoginDetails = creds.payload;
+        },
+        updateUserStatus:(state, status) => {
+            var status = status.payload;
+            state.userStatus = (status == 'member' || status == 'guest') ? status : state.userStatus
+        },
+        signInUser: (state) => {
+            state.userAuthenticated = true
         }
     }
 });
 
-export const {incrementCount, decrementCount, updateTokens, updateLoginCreds} = appSlice.actions;
+export const {
+    incrementCount, 
+    decrementCount, 
+    updateAuthTokens, 
+    updateUserLoginDetails, 
+    updateUserStatus,
+    signInUser
+} = appSlice.actions;
 
 const store = configureStore({
     reducer:appSlice.reducer
