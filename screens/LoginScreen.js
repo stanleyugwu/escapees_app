@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Root, Container, Button, Content, Thumbnail, Title,Form, Item, Input, Icon, Card, Spinner,Col} from 'native-base';
 import styled from 'styled-components';
 import {Grid, Row,} from 'react-native-easy-grid';
-import store, { updateAuthTokens, updateUserLoginDetails, updateUserStatus } from '../redux/store';
+import store, { signInUser, updateAuthTokens, updateUserLoginDetails, updateUserStatus } from '../redux/store';
 
 //app logo
 import logo from '../assets/images/logo.png';
@@ -61,7 +61,7 @@ const LoginScreen = (props) => {
             store.dispatch(updateUserStatus('member'));
             store.dispatch(updateAuthTokens(tokens));
             store.dispatch(updateUserLoginDetails(creds));
-            return props.navigation.navigate('Home',{passedToken:tokens['access_token'],login:creds})
+            store.dispatch(signInUser());
         }
     }
 
