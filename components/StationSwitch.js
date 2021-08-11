@@ -2,51 +2,48 @@ import React, { useEffect, useState } from "react";
 import { Switch } from "react-native-switch";
 import { Text, Badge } from "native-base";
 
-//preferences adapters
-import { retrieveData } from "../utils/localDataAdapters";
-
 //Just to disable Animation "useNativeDriver" Warning
 import { LogBox } from "react-native";
 
-const StationSwitch = (props) => {
+import store, {updateStationsInView} from "../redux/store";
+
+const StationSwitch = () => {
+
+  let {fuelTypePreference:ftp = 3,stationsInView:siv = 1} = store.getState();
+
   //fuel type display preference (1 = diesel, 2 = gasoline, 3 = gasAndDiesel)
-  const [displayPreference, setDisplayPreference] = useState(3);
-
-  //props destructure
-  const {
-    viewingStations,
-    setViewingStations,
-    fuelTypePreference,
-    screenFocused,
-  } = props;
-
-  fuelTypePreference != undefined &&
-    displayPreference != fuelTypePreference &&
-    screenFocused &&
-    setDisplayPreference(fuelTypePreference);
+  const [fuelTypePreference, setFuelTypePreference] = useState(ftp);
+  
+  //state for gasAndDiesel toggle btw gas/diesel stations
+  const [stationsInView, setStationsInView] = useState(siv);
 
   useEffect(() => {
-    // fuelTypePreference == undefined && loadPreference();
+    let stationsInViewUnsub = store.subscribe(() => {setStationsInView(store.getState().stationsInView)})
+    let fuelTypePreferenceUnsub = store.subscribe(() => {setFuelTypePreference(store.getState().fuelTypePreference)})
+    return () => {
+      stationsInViewUnsub();
+      fuelTypePreferenceUnsub();
+    }
   }, []);
 
   //Disable the Animation warning to set native driver
   //Switch dependency didn't set it
   LogBox.ignoreLogs(["Animated: `useNativeDriver`"]);
 
-  return displayPreference == 1 ? (
+  return fuelTypePreference == 1 ? (
     <Badge success style={{ marginLeft: 10 }}>
       <Text style={{ fontWeight: "700" }}>Diesel</Text>
     </Badge>
-  ) : displayPreference == 2 ? (
+  ) : fuelTypePreference == 2 ? (
     <Badge danger style={{ marginLeft: 10 }}>
       <Text style={{ fontWeight: "700" }}>Gasoline</Text>
     </Badge>
   ) : (
     <Switch
-      value={viewingStations == 1 ? true /*disel*/ : false /*gas*/}
-      onValueChange={(bool) =>
-        setViewingStations(!bool ? 2 /*gas*/ : 1 /*diesel*/)
-      }
+      value={stationsInView == 1 ? true /*disel*/ : false /*gas*/}
+      onValueChange={(bool) =>{
+        store.dispatch(updateStationsInView(!bool ? 2 /*gas*/ : 1 /*diesel*/))
+      }}
       activeText="Gas"
       inActiveText="Diesel"
       backgroundActive="#ccc"
@@ -63,17 +60,17 @@ const StationSwitch = (props) => {
         alignItems: "center",
         justifyContent: "center",
         padding: 3,
-        borderColor: viewingStations == 1 ? "#090" : "red",
+        borderColor: stationsInView == 1 ? "#090" : "red",
       }}
       renderInsideCircle={() => (
         <Text
           style={{
-            color: viewingStations == 1 ? "#090" : "red",
+            color: stationsInView == 1 ? "#090" : "red",
             fontWeight: "bold",
             fontSize: 15,
           }}
         >
-          {viewingStations == 1 ? "Diesel" : "Gas"}
+          {stationsInView == 1 ? "Diesel" : "Gas"}
         </Text>
       )}
     />
