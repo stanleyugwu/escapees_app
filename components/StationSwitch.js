@@ -9,7 +9,8 @@ import store, {updateStationsInView} from "../redux/store";
 
 const StationSwitch = () => {
 
-  let {fuelTypePreference:ftp = 3,stationsInView:siv = 1} = store.getState();
+  let {fuelType:ftp = "gasAndDiesel", } = store.getState().preferences;
+  let {stationsInView:siv = 1} = store.getState();
 
   //fuel type display preference (1 = diesel, 2 = gasoline, 3 = gasAndDiesel)
   const [fuelTypePreference, setFuelTypePreference] = useState(ftp);
@@ -19,7 +20,9 @@ const StationSwitch = () => {
 
   useEffect(() => {
     let stationsInViewUnsub = store.subscribe(() => {setStationsInView(store.getState().stationsInView)})
-    let fuelTypePreferenceUnsub = store.subscribe(() => {setFuelTypePreference(store.getState().fuelTypePreference)})
+    let fuelTypePreferenceUnsub = store.subscribe(() => {
+      setFuelTypePreference(store.getState().preferences.fuelType);
+    })
     return () => {
       stationsInViewUnsub();
       fuelTypePreferenceUnsub();
@@ -30,11 +33,11 @@ const StationSwitch = () => {
   //Switch dependency didn't set it
   LogBox.ignoreLogs(["Animated: `useNativeDriver`"]);
 
-  return fuelTypePreference == 1 ? (
+  return fuelTypePreference == "diesel" ? (
     <Badge success style={{ marginLeft: 10 }}>
       <Text style={{ fontWeight: "700" }}>Diesel</Text>
     </Badge>
-  ) : fuelTypePreference == 2 ? (
+  ) : fuelTypePreference == "gasoline" ? (
     <Badge danger style={{ marginLeft: 10 }}>
       <Text style={{ fontWeight: "700" }}>Gasoline</Text>
     </Badge>
