@@ -5,7 +5,7 @@ import { Text, Badge } from "native-base";
 //Just to disable Animation "useNativeDriver" Warning
 import { LogBox } from "react-native";
 
-import store, {updateStationsInView} from "../redux/store";
+import store, {updateStationsInView} from "../../redux/store";
 
 const StationSwitch = () => {
 

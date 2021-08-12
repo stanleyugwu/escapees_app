@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Switch } from 'react-native-switch';
 import {Text} from 'native-base';
-import store, { updateSortingParameter } from '../redux/store';
+import store, { updateSortingParameter } from '../../redux/store';
 
 //Just to disable Animation "useNativeDriver" Warning
 import { LogBox } from "react-native";

@@ -5,7 +5,7 @@ import { StyleSheet, TouchableHighlight, TouchableOpacity } from 'react-native';
 
 //viewingStations Switch and sort components
 import StationSwitch from './StationSwitch';
-import SortSwitch from "../components/SortSwitch";
+import SortSwitch from "./SortSwitch";
 //slide-up menu
 import SlideMenu from './SlideMenu';
 
