@@ -18,17 +18,18 @@ import RadioButton from "../components/RadioButton";
 
 //data storage helpers
 import { storeData, retrieveData } from "../utils/localDataAdapters";
+import store, { updatePreferences, updateStationsInView } from "../redux/store";
 
 const PreferencesScreen = (props) => {
+
+  let {fuelType,fuelPrice,fuelUnit} = store.getState().preferences;
   //fuel type display preference (1 = diesel, 2 = gasoline, 3 = both)
-  const [fuelTypePreference, setFuelTypePreference] = useState("gasAndDiesel");
+  const [fuelTypePreference, setFuelTypePreference] = useState(fuelType);
   //fuel price display preference
-  const [fuelPricePreference, setFuelPricePreference] = useState("midgrade");
+  const [fuelPricePreference, setFuelPricePreference] = useState(fuelPrice);
   //fuel unit preference
   const [fuelUnitPreference, setFuelUnitPreference] =
-    useState("pricePerGallon");
-
-  const [preferenceChanged, setPreferenceChanged] = useState(false); //changed preference state
+    useState(fuelUnit);
 
   const storeKey = "eskp_pv_preferences"; //preferences store key
 
@@ -75,9 +76,7 @@ const PreferencesScreen = (props) => {
       );
 
     props.navigation.isFocused() &&
-      props.navigation.navigate("Home", {
-        hasNewPreference: preferenceChanged,
-      }); //exit to home
+      props.navigation.navigate("Home"); //exit to home
   };
 
   //back press handler
@@ -90,16 +89,22 @@ const PreferencesScreen = (props) => {
   useEffect(() => {
     //run exit screen on back button press
     BackHandler.addEventListener("hardwareBackPress", _handleBackButtonPress);
-
-    const load = async () => {
-      await _loadPreferences();
-    };
-    props.navigation.isFocused() && load();
+    return store.subscribe(() => {
+      let {fuelType,fuelPrice,fuelUnit} = store.getState().preferences;
+      setFuelTypePreference(fuelType);
+      setFuelPricePreference(fuelPrice);
+      setFuelUnitPreference(fuelUnit);
+    })
   }, []);
 
   //track preference change
   useEffect(() => {
-    setPreferenceChanged(true);
+    let currentPreferences = {
+      fuelType: fuelTypePreference,
+      fuelPrice: fuelPricePreference,
+      fuelUnit: fuelUnitPreference,
+    }
+    store.dispatch(updatePreferences(currentPreferences));
   }, [fuelTypePreference, fuelPricePreference, fuelUnitPreference]);
 
   return (
@@ -160,7 +165,10 @@ const PreferencesScreen = (props) => {
                     </Row>
                     <Row>
                       <TouchableOpacity
-                        onPress={() => setFuelTypePreference("gasoline")}
+                        onPress={() => {
+                          store.dispatch(updateStationsInView(2));
+                          setFuelTypePreference("gasoline");
+                        }}
                       >
                         <RadioButton
                           checked={fuelTypePreference == "gasoline"}
@@ -181,7 +189,10 @@ const PreferencesScreen = (props) => {
                     </Row>
                     <Row>
                       <TouchableOpacity
-                        onPress={() => setFuelTypePreference("diesel")}
+                        onPress={() => {
+                          store.dispatch(updateStationsInView(1));
+                          setFuelTypePreference("diesel");
+                        }}
                       >
                         <RadioButton checked={fuelTypePreference == "diesel"} />
                       </TouchableOpacity>
