@@ -3,15 +3,17 @@ import {createSlice, configureStore} from '@reduxjs/toolkit';
 const appSlice = createSlice({
     name:'eskp_store',
     initialState:{
-        count:0,
         //currently showing station type (1 = diesel, 2 = gas)
-        stationsInView:1,
+        stationsInView:2,
         //currently showing stations display type (1 = MapView, 2 = ListView )
         stationsDisplayType:1,
         //resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
         stationsData:null,
-        //fuel display type preference (1 = diesel, 2 = gasoline, 3 = gasoline&diesel)
-        fuelTypePreference:3,
+        preferences: {
+            "fuelPrice": "midgrade",
+            "fuelType": "gasAndDiesel",
+            "fuelUnit": "pricePerGallon",
+        },
         //sorting prameter (1 = Price, 2 = Distance)
         sortingParameter:1,
         //user current latLng position
@@ -26,11 +28,20 @@ const appSlice = createSlice({
         authTokens:null,
     },
     reducers:{
-        incrementCount: (state) => {
-            state.count++
+        updateStationsInView: (state, stationNum) => {
+            state.stationsInView = stationNum.payload;
         },
-        decrementCount: (state) => {
-            state.count--
+        updateStationsData: (state, data) => {
+            state.stationsData = data.payload;
+        },
+        updatePreferences: (state, preferenceObj) => {
+            state.preferences = {...state.preferences,...preferenceObj.payload};
+        },
+        updateSortingParameter: (state, sortParameter) => {
+            state.sortingParameter = sortParameter.payload;
+        },
+        updateUserPosition: (state, pos) => {
+            state.userPosition = pos.payload;
         },
         updateAuthTokens: (state, tokens) => {
             state.authTokens = tokens.payload
@@ -44,17 +55,26 @@ const appSlice = createSlice({
         },
         signInUser: (state) => {
             state.userAuthenticated = true
+        },
+        signOutUser: (state) => {
+            state.userAuthenticated = false
         }
     }
 });
 
 export const {
     incrementCount, 
-    decrementCount, 
+    decrementCount,
+    updateStationsInView,
+    updateStationsData,
+    updatePreferences,
+    updateSortingParameter,
+    updateUserPosition,
     updateAuthTokens, 
     updateUserLoginDetails, 
     updateUserStatus,
-    signInUser
+    signInUser,
+    signOutUser
 } = appSlice.actions;
 
 const store = configureStore({
