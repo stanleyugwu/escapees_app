@@ -3,7 +3,7 @@ import timeoutRejector from '../utils/timeoutRejector';
 
 const stationsDataEndpoint = Constants.manifest.extra.stations_data_endpoint;
 
-const getAllStationLocations = (token) => {
+const getAllStationLocations = async (token) => {
 
     var requestOptions = {
     method: 'GET',
