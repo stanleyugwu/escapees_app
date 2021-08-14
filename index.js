@@ -22,12 +22,10 @@ import { Ionicons } from "@expo/vector-icons";
 
 //util
 import { retrieveData } from "./utils/localDataAdapters";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
 
-//splash delay
-import AppLoading from "expo-app-loading";
 //redux store
-import store, {signInUser} from "./redux/store";
-import { View, Text,  } from "native-base";
+import store, {signInUser, updatePreferences, updateStationsData, updateUserLoginDetails, updateUserStatus} from "./redux/store";
 
 //create navigaton root
 const Stack = createStackNavigator();
@@ -39,10 +37,10 @@ const authenticateUser = async () => {
 
   //get persisted data
   var data = await retrieveData(storeKey, true);
-  return false
+  // return {isSignedIn:false}
 
   if (!data) {
-    return false
+    return {isSignedIn:false}
   } else if (
     data &&
     typeof data == "object" &&
@@ -50,9 +48,13 @@ const authenticateUser = async () => {
     data["stationsData"] &&
     "login" in data
   ) {
-    return true
+    return {
+      isSignedIn:true,
+      login:data['login'],
+      stationsData:data['stationsData']
+    }
   } else {
-    return false
+    return {isSignedIn:false}
   }
 };
 
@@ -62,6 +64,12 @@ const App = () => {
 
   useEffect(() =>{
     const setUp = async () => {
+      // AsyncStorage.multiRemove([
+      //   "eskp_pv_data",
+      //   "eskp_pv_preferences",
+      //   "eskp_pv_transactions",
+      // ]).then(console.log);
+      // return
       //Load Fonts
       await Font.loadAsync({
         Roboto,
@@ -69,9 +77,20 @@ const App = () => {
         ...Ionicons.font,
       });
 
-      let signedIn = await authenticateUser();
-      setUserSignedIn(signedIn);
+      let user = await authenticateUser();
+      setUserSignedIn(user.isSignedIn);
       setIsLoading(false);
+      
+      if(user.isSignedIn){
+        store.dispatch(updateUserStatus('member'));//update status
+        store.dispatch(updateStationsData(user.stationsData || null));//load stations data
+        store.dispatch(updateUserLoginDetails(user.login));//store login creds
+        store.dispatch(signInUser());//sign in user
+        let preferences = await retrieveData('eskp_pv_preferences',false);
+        if(preferences){
+          store.dispatch(updatePreferences(preferences));//load preferences
+        }
+      }
     }
     setUp();
 
@@ -80,7 +99,7 @@ const App = () => {
   },[])
 
   return isLoading ? (
-    <AppLoading/>
+    <SplashScreen/>
   ) : (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown:false,}}>
