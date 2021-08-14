@@ -27,7 +27,7 @@ const SortSwitch = (props) => {
                 store.dispatch(updateSortingParameter(sortingParameter == 1 ? 2 : 1));   
             }}
             //disable if userPosition is null, not object
-            disabled={store.getState().userPosition}
+            disabled={!!store.getState().userPosition}
             activeText="Price"
             inActiveText="Distance"
             backgroundActive="#ccc"
