@@ -1,9 +1,12 @@
 import React from 'react';
 import { Grid, Row, Col } from 'react-native-easy-grid';
 import {Icon, Text} from 'native-base';
-import { TouchableOpacity, StyleSheet } from 'react-native';
+import { TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import store from '../../redux/store';
 
 const SlideMenu = (props) => {
+
+    let isGuest = store.getState().userStatus == 'guest';
     let {menuVisible, setMenuVisible, navigate} = props;
     return (
         <Grid
@@ -35,7 +38,10 @@ const SlideMenu = (props) => {
             <Row style={styles.RowStyle}>
               <TouchableOpacity
                 style={styles.MenuItemTouchable}
-                onPress={() => navigate("Preferences")}
+                onPress={() => {
+                  if(isGuest) return alert('You need to sign in to user this feature')
+                  navigate("Preferences")
+                }}
               >
                 <Col size={33} style={styles.MenuItemIconWrapper}>
                   <Icon name="star-sharp" type="Ionicons" />
@@ -50,7 +56,10 @@ const SlideMenu = (props) => {
             <Row style={styles.RowStyle}>
               <TouchableOpacity
                 style={styles.MenuItemTouchable}
-                onPress={() => navigate("Transactions")}
+                onPress={() => {
+                  if(isGuest) return alert('You need to sign in to user this feature')
+                  navigate("Transactions")
+                }}
               >
                 <Col size={33} style={styles.MenuItemIconWrapper}>
                   <Icon name="receipt" type="MaterialCommunityIcons" />
