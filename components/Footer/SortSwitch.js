@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Switch } from 'react-native-switch';
 import {Text} from 'native-base';
+import store, { updateSortingParameter } from '../../redux/store';
 
 //Just to disable Animation "useNativeDriver" Warning
 import { LogBox } from "react-native";
@@ -11,18 +12,22 @@ const SortSwitch = (props) => {
     //Switch dependency didn't set it
     LogBox.ignoreLogs(["Animated: `useNativeDriver`"]);
 
-    //props sorting paramter destructure /-> 1 = Price, 2 = Distance <-/
-    const { setSortingParameter, sortingParameter , notToggleable} = props;
+    const [sortingParameter, setSortingParameter] = useState(store.getState().sortingParameter || 1);
 
+    useEffect(() => {
+        return store.subscribe(() => {setSortingParameter(store.getState().sortingParameter)})
+    }, [])
+    
     return (
         <Switch
             value={
                 sortingParameter == 1 ? false : true
             }
-            onValueChange={v => {
-                setSortingParameter(sortingParameter == 1 ? 2 : 1);   
+            onValueChange={_ => {
+                store.dispatch(updateSortingParameter(sortingParameter == 1 ? 2 : 1));   
             }}
-            disabled={notToggleable}
+            //disable if userPosition is null, not object
+            disabled={!!store.getState().userPosition}
             activeText="Price"
             inActiveText="Distance"
             backgroundActive="#ccc"

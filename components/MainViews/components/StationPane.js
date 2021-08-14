@@ -13,6 +13,7 @@ const StationPane = (props) => {
   //shorthand
   const { stationData: s = {} } = props;
   const { distanceFromUser } = s;
+  console.log(distanceFromUser)
 
   //stations latLng
   const { latitude: slat, longitude: slon } = s;

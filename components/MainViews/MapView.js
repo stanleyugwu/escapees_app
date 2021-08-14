@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useState } from "react";
 import { View, Text, Icon, Grid, Col } from "native-base";
 import { Alert, Dimensions, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -9,13 +9,18 @@ import * as Location from "expo-location";
 //Map Components
 import CustomMarkerView from "./components/CustomMarkerView";
 import CustomCalloutView from "./components/CustomCalloutView";
+import store, { updateUserPosition } from "../../redux/store";
 
 //install navigator global object for location
 Location.installWebGeolocationPolyfill();
 
 const AppMapView = (props) => {
   //props destructure
-  const { stationLocationsData, setUserPosition, userPosition } = props;
+  const { stationLocationsData, } = props;
+  const position = store.getState().userPosition;
+
+  const [paneVisible, setPaneVisible] = useState(null);
+  const [userPosition, setUserPosition] = useState(position)
 
   //initial region (pittsburgh)
   const initialRegion = {
@@ -27,12 +32,15 @@ const AppMapView = (props) => {
 
   //map reference
   var mapRef = useRef();
+  
+  //track umounts
+  var screenFocused = true;
 
   //show location access denial warning
   const warn = () =>
     Alert.alert(
       "Access to location failed!",
-      "This could be because you denied access to your location, or the app failed to access your location.\nClick 'enable' to enable location",
+      "There was an error accessing your location. If you denied location access, click 'enable' to enable it",
       [
         {
           text: "Enable",
@@ -41,59 +49,70 @@ const AppMapView = (props) => {
         },
         {
           text: "Cancel",
-          onPress: (e) => setUserPosition(false),
+          onPress: (e) => screenFocused && setPaneVisible(true),
           style: "destructive",
         },
       ]
     );
 
-  //request location on mount
-  useEffect(() => {
-    requestLocation();
-  }, []);
 
   //location and permission request
   const requestLocation = async () => {
-    if (userPosition instanceof Object) return;
 
     //check for foreground location permission
     const status = await Location.getForegroundPermissionsAsync();
 
     //demand permission if not granted already
-    if (!status.granted) {
+    if (!status.granted && screenFocused) {
       const { granted } = await Location.requestForegroundPermissionsAsync();
-      if (!granted) return setUserPosition(false); //never grab user location info if permission not granted
+      if (!granted && screenFocused) return setPaneVisible(true); //never grab user location info if permission not granted
     }
 
     //if permission granted (if didn't return)
     try {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
+          let region = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            latitudeDelta: 0.39,
+            longitudeDelta: 0.39,
+          }
+
           //animate to user position coords
-          mapRef.animateToRegion(
-            {
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-              latitudeDelta: 0.39,
-              longitudeDelta: 0.39,
-            },
+          screenFocused && mapRef && mapRef.animateToRegion(
+            region,
             1000
           );
-
-          setUserPosition(pos.coords);
+          setPaneVisible(false);
+          store.dispatch(updateUserPosition(region));
+          console.log(store.getState().userPosition)
         },
         (error) => {
-          setUserPosition(false); //failed or denied by user
+          console.log(error)
           warn();
         },
         { enableHighAccuracy: Location.Accuracy.High }
       );
     } catch (e) {
+      console.log(e)
       //catch any other thrown error
       warn();
-      setUserPosition(false);
     }
   };
+
+  //request location on mount
+  useEffect(() => {
+    if(!userPosition) requestLocation();
+    let unsubscribe = store.subscribe(() => {
+      setUserPosition(store.getState().userPosition);
+    });
+
+    return () => {
+      unsubscribe();
+      screenFocused = false;
+    }
+  }, []);
 
   return (
     <View>
@@ -135,12 +154,13 @@ const AppMapView = (props) => {
           })}
       </MapView>
 
-      {userPosition == false ? (
+      {!userPosition && paneVisible ? (
         <View style={styles.Warning}>
           <Grid style={{ alignItems: "center", justifyContent: "center" }}>
             <Col size={88}>
               <TouchableOpacity
                 onPress={(e) => {
+                  setPaneVisible(false);
                   requestLocation();
                 }}
               >
@@ -150,7 +170,7 @@ const AppMapView = (props) => {
             <Col size={12}>
               <TouchableOpacity
                 onPress={(e) => {
-                  setUserPosition("true");
+                  setPaneVisible(false);
                 }}
               >
                 <Icon name="close" />

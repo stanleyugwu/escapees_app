@@ -3,39 +3,79 @@ import {createSlice, configureStore} from '@reduxjs/toolkit';
 const appSlice = createSlice({
     name:'eskp_store',
     initialState:{
-        count:0,
         //currently showing station type (1 = diesel, 2 = gas)
-        stationsInView:1,
+        stationsInView:2,
         //currently showing stations display type (1 = MapView, 2 = ListView )
         stationsDisplayType:1,
         //resource data (null = 'loading', [data] = 'loaded', false = 'encountered error')
         stationsData:null,
-        //fuel display type preference (1 = diesel, 2 = gasoline, 3 = gasoline&diesel)
-        fuelTypePreference:3,
+        preferences: {
+            "fuelPrice": "midgrade",
+            "fuelType": "gasAndDiesel",
+            "fuelUnit": "pricePerGallon",
+        },
         //sorting prameter (1 = Price, 2 = Distance)
         sortingParameter:1,
         //user current latLng position
         userPosition:null,
-        tokens:null,
-        loginDetails:null
+        userStatus:'guest',
+        userAuthenticated:false,
+        genericLoginDetails:{
+            email:'stanleyugwu2018@gmail.com',
+            password:'66413705'
+        },
+        userLoginDetails:null,
+        authTokens:null,
     },
     reducers:{
-        incrementCount: (state) => {
-            state.count++
+        updateStationsInView: (state, stationNum) => {
+            state.stationsInView = stationNum.payload;
         },
-        decrementCount: (state) => {
-            state.count--
+        updateStationsData: (state, data) => {
+            state.stationsData = data.payload;
         },
-        updateTokens: (state, tokens) => {
-            state.tokens = tokens.payload
+        updatePreferences: (state, preferenceObj) => {
+            state.preferences = {...state.preferences,...preferenceObj.payload};
         },
-        updateLoginCreds: (state, creds) => {
-            state.loginDetails = creds.payload
+        updateSortingParameter: (state, sortParameter) => {
+            state.sortingParameter = sortParameter.payload;
+        },
+        updateUserPosition: (state, pos) => {
+            state.userPosition = pos.payload;
+        },
+        updateAuthTokens: (state, tokens) => {
+            state.authTokens = tokens.payload
+        },
+        updateUserLoginDetails: (state, creds) => {
+            state.userLoginDetails = creds.payload;
+        },
+        updateUserStatus:(state, status) => {
+            var status = status.payload;
+            state.userStatus = (status == 'member' || status == 'guest') ? status : state.userStatus
+        },
+        signInUser: (state) => {
+            state.userAuthenticated = true
+        },
+        signOutUser: (state) => {
+            state.userAuthenticated = false
         }
     }
 });
 
-export const {incrementCount, decrementCount, updateTokens, updateLoginCreds} = appSlice.actions;
+export const {
+    incrementCount, 
+    decrementCount,
+    updateStationsInView,
+    updateStationsData,
+    updatePreferences,
+    updateSortingParameter,
+    updateUserPosition,
+    updateAuthTokens, 
+    updateUserLoginDetails, 
+    updateUserStatus,
+    signInUser,
+    signOutUser
+} = appSlice.actions;
 
 const store = configureStore({
     reducer:appSlice.reducer

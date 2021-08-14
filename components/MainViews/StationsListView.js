@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, Icon } from "native-base";
 import { FlatList, LogBox } from "react-native";
 //station display
 import StationPane from "./components/StationPane";
 //distance calculator helper
 import distanceFromCoords from "../../utils/distanceFromCoords";
+import store from "../../redux/store";
 
 //price sorting function
 const _priceSorter = (stationA, stationB) => {
@@ -59,19 +60,28 @@ const listHeaderRenderer = (sortingParameter, dataAvailable) =>
   ) : null;
 
 const ListView = (props) => {
-  //silence Flatlist warning for nested scrollviews
-  useEffect(() => {
-    LogBox.ignoreLogs(["VirtualizedLists should never be nested"]);
-  }, []);
+  
 
   //data destructure
-  const { stationLocationsData, userPosition, sortingParameter } = props;
+  const { stationLocationsData } = props;
+  const {userPosition:pos, sortingParameter:sort} = store.getState();
 
+  const [userPosition, setUserPosition] = useState(pos);
+  const [sortingParameter, setSortingParameter] = useState(sort);
+
+  useEffect(() => {
+    LogBox.ignoreLogs(["VirtualizedLists should never be nested"]);
+    return store.subscribe(() => {
+      setUserPosition(store.getState().userPosition);
+      setSortingParameter(store.getState().sortingParameter);
+    });
+  }, []);
   //loop through stations data and add distanceFromUser prop to each station
   let stationsData =
     stationLocationsData &&
-    stationLocationsData.map((station) => {
-      if (userPosition == false || userPosition == "true") {
+    stationLocationsData.map((stationObj) => {
+      let station = {...stationObj};//copy station object beacuse its immutable
+      if (!userPosition || userPosition == "true") {
         station.distanceFromUser = false;
         return station;
       }
@@ -81,6 +91,7 @@ const ListView = (props) => {
         let { latitude: ulat, longitude: ulon } = userPosition,
           { latitude: slat, longitude: slon } = station;
         station.distanceFromUser = distanceFromCoords(ulat, slat, ulon, slon);
+        console.log(station.distanceFromUser)
       } catch (error) {
         station.distanceFromUser = false;
       }

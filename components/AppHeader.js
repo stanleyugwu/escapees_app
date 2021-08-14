@@ -6,15 +6,16 @@ import logo from '../assets/images/logo.png';
 //icon pack
 import { MaterialIcons as Icon } from "@expo/vector-icons";
 import { TouchableOpacity } from 'react-native';
+import store from '../redux/store';
 
 
 const AppHeader = (props) => {
 
     //props destructure
-    const {viewingStations, dataLoaded, showViewStatusBar} = props;
+    const {dataLoaded, showViewStatusBar} = props;
     
     //station in view
-    const stationInView = viewingStations == 1 ? 'Diesel Fuel' : 'Gas';
+    const stationsInView = store.getState().stationsInView == 1 ? 'Diesel Fuel' : 'Gas';
 
     //memoize for speed
     return useMemo(() => {
@@ -25,9 +26,9 @@ const AppHeader = (props) => {
                     style={{backgroundColor:'#fff'}}
                     iosBarStyle="light-content"
                     noShadow={true}
-                    androidStatusBarColor={showViewStatusBar ? viewingStations == 1 ? '#090' : 'red' : 'black'}
+                    androidStatusBarColor={showViewStatusBar ? stationsInView == 'Diesel Fuel' ? '#090' : 'red' : 'black'}
                 >
-                    <Body>
+                    <Body style={{paddingHorizontal:10}}>
                         <Thumbnail large source={logo} square resizeMode="contain" style={{width:'100%',height:'100%'}}/>
                     </Body>
                 </Header>
@@ -35,10 +36,10 @@ const AppHeader = (props) => {
                 {/* Viewing Stations status bar */}
                 {
                     showViewStatusBar ? (
-                    <View style={{backgroundColor: viewingStations == 1 ? '#090' : 'red'}}>
+                    <View style={{backgroundColor: stationsInView == 'Diesel Fuel' ? '#090' : 'red'}}>
                         <Text style={{color:'white',textAlign:'center'}}>
                             {
-                                dataLoaded ? `Currently Viewing ${stationInView} Prices`  : 'Loading...'
+                                dataLoaded ? `Currently Viewing ${stationsInView} Prices`  : 'Loading...'
                             }
                         </Text>
                     </View>
@@ -47,7 +48,7 @@ const AppHeader = (props) => {
             </View>
         
         )
-    }, [viewingStations,dataLoaded, showViewStatusBar]);//re-render determinants
+    }, [stationsInView,dataLoaded, showViewStatusBar]);//re-render determinants
 
 };
 
